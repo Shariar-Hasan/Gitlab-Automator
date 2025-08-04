@@ -2,7 +2,11 @@
     // Redirect to development if no target_branch in URL
     const url = new URL(location.href);
     const params = url.searchParams;
-    if (!params.get("merge_request[target_branch]")) {
+    const isTargetBranchDevelopment = params.get("merge_request[target_branch]") === "development";
+    const isSourceBranchDevelopment = params.get("merge_request[source_branch]") === "development";
+    const isTargetBranchMain = params.get("merge_request[target_branch]") === "main";
+    const isTargetBranchNotExist = !params.get("merge_request[target_branch]");
+    if (isTargetBranchNotExist) {
         params.set("merge_request[target_branch]", "development");
         location.href = `${url.origin}${url.pathname}?${params.toString()}`;
         return;
@@ -17,9 +21,9 @@
 
         // Add "Change to main" link after target branch title
         const targetTitle = document.querySelector("#js-target-branch-title");
-        if (targetTitle && !document.querySelector("#change-to-main-link")) {
+        if (targetTitle && !document.querySelector("#change-to-main-link") && !isSourceBranchDevelopment) {
             const a = document.createElement("a");
-            a.textContent = "Change to main";
+            a.textContent = isTargetBranchDevelopment ? "Change to main" : "Change to development";
             a.href = "#";
             a.style.marginLeft = "8px";
             a.style.fontSize = "16px";
@@ -31,7 +35,7 @@
             a.onclick = (e) => {
                 e.preventDefault();
                 const newParams = new URLSearchParams(location.search);
-                newParams.set("merge_request[target_branch]", "main");
+                newParams.set("merge_request[target_branch]", isTargetBranchDevelopment ? "main" : "development");
                 location.href = `${location.origin}${location.pathname}?${newParams.toString()}`;
             };
 

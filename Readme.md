@@ -1,4 +1,4 @@
-# GitLab MR Enhancer
+# GitLab Automator
 
 > 🚀 A Chrome extension that automatically optimizes GitLab merge request creation by setting intelligent defaults and providing quick branch switching capabilities.
 

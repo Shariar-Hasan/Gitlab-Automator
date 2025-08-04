@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "GitLab MR Enhancer",
+    "name": "gitlab-automation",
     "version": "1.0.0",
     "description": "Add MR to development and disable auto-delete source branch.",
     "permissions": [

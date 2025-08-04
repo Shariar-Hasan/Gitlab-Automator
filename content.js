@@ -1,75 +1,44 @@
 (function () {
-    const waitFor = (selector, timeout = 2000) =>
-        new Promise((resolve, reject) => {
-            const interval = 100;
-            let elapsed = 0;
-            const check = () => {
-                const el = document.querySelector(selector);
-                if (el) return resolve(el);
-                elapsed += interval;
-                if (elapsed >= timeout) return reject("Timeout waiting for selector: " + selector);
-                setTimeout(check, interval);
-            };
-            check();
-        });
+    // Redirect to development if no target_branch in URL
+    const url = new URL(location.href);
+    const params = url.searchParams;
+    if (!params.get("merge_request[target_branch]")) {
+        params.set("merge_request[target_branch]", "development");
+        location.href = `${url.origin}${url.pathname}?${params.toString()}`;
+        return;
+    }
 
-    async function enhanceGitLabMRPage() {
-        try {
-            const form = await waitFor('form#new_merge_request');
-            const targetBranchSelect = await waitFor('[name="merge_request[target_branch]"]');
-            const deleteCheckbox = await waitFor('#merge_request_force_remove_source_branch');
-
-            // Create new button
-            const mrWithDevelopment = createButton("Create MR with Development", () => {
-                // Check if the form is valid before proceeding
-                if (!form.checkValidity()) {
-                    alert("Please fill out all required fields before creating the MR.");
-                    return;
-                }
-                if (targetBranchSelect) {
-                    targetBranchSelect.value = "development";
-                }
-                if (deleteCheckbox) {
-                    deleteCheckbox.checked = false;
-                }
-                form.submit();
-            }, { bgColor: "#4CAF50", textColor: "white" });
-            const mrWithDevelopmentAndDeleteSource = createButton("Create MR with Development and Delete Source", () => {
-                // Check if the form is valid before proceeding
-                if (!form.checkValidity()) {
-                    alert("Please fill out all required fields before creating the MR.");
-                    return;
-                }
-                if (targetBranchSelect) {
-                    targetBranchSelect.value = "development";
-                }
-                if (deleteCheckbox) {
-                    deleteCheckbox.checked = true;
-                }
-                form.submit();
-            }, { bgColor: "#f44336", textColor: "white" });
-
-            // Insert the button beside the default one
-            const createBtn = document.querySelector('[data-track-label="submit_mr"]');
-            if (createBtn && createBtn.parentNode) {
-                createBtn.parentNode.insertBefore(mrWithDevelopmentAndDeleteSource, createBtn.nextSibling);
-                createBtn.parentNode.insertBefore(mrWithDevelopment, createBtn.nextSibling);
-            }
-        } catch (err) {
-            console.error("GitLab MR Enhancer Error:", err);
+    const interval = setInterval(() => {
+        // Uncheck delete source branch checkbox
+        const checkbox = document.querySelector("#merge_request_force_remove_source_branch");
+        if (checkbox && checkbox.checked) {
+            checkbox.checked = false;
         }
-    }
-    function createButton(text, onClick, { bgColor, textColor }) {
-        const newBtn = document.createElement("button");
-        newBtn.textContent = text;
-        newBtn.type = "button";
-        newBtn.style.margin = "0px 8px";
-        newBtn.style.backgroundColor = bgColor || "#4CAF50";
-        newBtn.style.color = textColor || "white";
-        newBtn.className = "btn btn-confirm";
-        newBtn.onclick = onClick;
-        return newBtn;
-    }
 
-    enhanceGitLabMRPage();
+        // Add "Change to main" link after target branch title
+        const targetTitle = document.querySelector("#js-target-branch-title");
+        if (targetTitle && !document.querySelector("#change-to-main-link")) {
+            const a = document.createElement("a");
+            a.textContent = "Change to main";
+            a.href = "#";
+            a.style.marginLeft = "8px";
+            a.style.fontSize = "16px";
+            a.className = "btn btn-md btn-confirm"
+            a.id = "change-to-main-link";
+            a.style.backgroundColor = "#fafc6dff";
+            a.style.color = "#000000ff";
+
+            a.onclick = (e) => {
+                e.preventDefault();
+                const newParams = new URLSearchParams(location.search);
+                newParams.set("merge_request[target_branch]", "main");
+                location.href = `${location.origin}${location.pathname}?${newParams.toString()}`;
+            };
+
+            targetTitle.insertAdjacentElement("afterend", a);
+        }
+    }, 300);
+
+    // Stop after 5 seconds
+    setTimeout(() => clearInterval(interval), 5000);
 })();

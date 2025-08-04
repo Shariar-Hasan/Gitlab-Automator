@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "GitLab MR Enhancer",
+    "version": "1.0.0",
+    "description": "Add MR to development and disable auto-delete source branch.",
+    "permissions": [
+        "scripting"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://gitlab.com/*/-/merge_requests/new*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "icons": {
+        "48": "icon.png"
+    }
+}

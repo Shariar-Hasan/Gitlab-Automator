@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "gitlab-automation",
+    "name": "Github Automator",
     "version": "1.0.0",
     "description": "Add MR to development and disable auto-delete source branch.",
     "permissions": [

@@ -46,7 +46,7 @@ The extension adds a **yellow toggle button** next to the target branch title:
 | Current Target | Button Text | Action |
 |----------------|-------------|--------|
 | `development` | "Change to main" | 🔄 Switches target to `main` branch |
-| `main` | "Change to development" | � Switches target to `development` branch |
+| `main` | "Change to development" | 🔄 Switches target to `development` branch |
 
 ### Usage Steps
 1. **Navigate** to any GitLab merge request page:
@@ -98,12 +98,12 @@ The extension employs a smart URL-based approach with DOM manipulation:
 
 ```javascript
 // Core functionality pipeline
-1. � Check URL parameters for target branch
+1. 🔗 Check URL parameters for target branch
 2. 🔄 Auto-redirect to set 'development' as default (if not set)
 3. 🔒 Monitor and uncheck 'delete source branch' checkbox
 4. 🎯 Inject toggle button next to target branch title
 5. ⚡ Enable instant branch switching via URL parameters
-6. � Stop monitoring after 5 seconds for performance
+6. ⏱️ Stop monitoring after 5 seconds for performance
 ```
 
 ### Technical Implementation

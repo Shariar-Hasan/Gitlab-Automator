@@ -1,5 +1,4 @@
 (function () {
-  // Function to create and show loading overlay
   function showLoadingOverlay() {
     const overlay = document.createElement("div");
     overlay.id = "branch-loading-overlay";

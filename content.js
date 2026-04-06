@@ -70,7 +70,7 @@
   const isSourceBranchDevelopment =
     params.get("merge_request[source_branch]") === "development";
   const isTargetBranchNotExist = !params.get("merge_request[target_branch]");
-  if (isTargetBranchNotExist) {
+  if (isTargetBranchNotExist && !isSourceBranchDevelopment) {
     params.set("merge_request[target_branch]", "development");
     showLoadingOverlay();
     location.href = `${url.origin}${url.pathname}?${params.toString()}`;

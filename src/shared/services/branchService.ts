@@ -83,8 +83,9 @@ export class BranchService {
       'Accept': 'application/json',
     };
 
-    const token = config.global.personalAccessToken || authData?.token;
-    if (token) {
+    const rawToken = config.global.personalAccessToken || authData?.token;
+    const token = rawToken?.trim();
+    if (token && (token.startsWith('glpat-') || /^[a-zA-Z0-9_\-]{20,250}$/.test(token))) {
       headers['PRIVATE-TOKEN'] = token;
     }
     if (authData?.csrfToken) {

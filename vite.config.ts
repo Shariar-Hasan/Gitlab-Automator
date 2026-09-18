@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
-import { writeFileSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 
 // Custom plugin to copy manifest and icons
 function copyManifestPlugin() {
@@ -12,20 +12,25 @@ function copyManifestPlugin() {
       this.emitFile({
         type: 'asset',
         fileName: 'manifest.json',
-        source: manifest
+        source: manifest,
       });
-      // Try copying icon if it exists
+
+      // Copy all logos/icons from src/logo
+      const logoDir = resolve(__dirname, 'src/logo');
       try {
-        const icon = readFileSync(resolve(__dirname, 'icon.png'));
-        this.emitFile({
-          type: 'asset',
-          fileName: 'icon.png',
-          source: icon
-        });
+        const files = readdirSync(logoDir);
+        for (const file of files) {
+          const content = readFileSync(resolve(logoDir, file));
+          this.emitFile({
+            type: 'asset',
+            fileName: `logo/${file}`,
+            source: content,
+          });
+        }
       } catch (e) {
-        // Ignore if icon doesn't exist
+        // Ignore if logo dir doesn't exist
       }
-    }
+    },
   };
 }
 

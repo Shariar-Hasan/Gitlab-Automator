@@ -16,30 +16,24 @@ export class AuthExtractor {
       const userMeta = document.querySelector<HTMLMetaElement>('meta[name="user-login"]');
       const username = userMeta?.content || undefined;
 
-      // 3. Check localStorage for tokens
+      // 3. Optional: check only explicitly documented token keys in localStorage
+      // and strictly validate the official GitLab Personal Access Token format (glpat-...)
       let foundToken: string | undefined;
       try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (!key) continue;
-          const lowerKey = key.toLowerCase();
-          if (
-            lowerKey.includes('token') ||
-            lowerKey.includes('pat') ||
-            lowerKey.includes('glpat') ||
-            lowerKey.includes('auth') ||
-            lowerKey.includes('access')
-          ) {
-            const val = localStorage.getItem(key);
-            if (val && typeof val === 'string' && val.length >= 10 && val.length < 500) {
-              // Found potential token
-              foundToken = val.replace(/^["']|["']$/g, '');
+        const documentedKeys = ['glpat', 'gitlab_pat', 'gitlab_token'];
+        for (const key of documentedKeys) {
+          const val = localStorage.getItem(key);
+          if (val && typeof val === 'string') {
+            const cleaned = val.replace(/^["']|["']$/g, '').trim();
+            // Strictly validate GitLab Personal Access Token format
+            if (/^glpat-[a-zA-Z0-9_\-]{20,250}$/.test(cleaned)) {
+              foundToken = cleaned;
               break;
             }
           }
         }
       } catch (e) {
-        // localStorage might be blocked in some iframes
+        // localStorage might be restricted in sandboxed contexts
       }
 
       // 4. Cookies

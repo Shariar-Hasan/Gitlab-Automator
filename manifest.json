@@ -1,29 +1,31 @@
 {
   "manifest_version": 3,
-  "name": "GitLab Merge Request Automator",
+  "name": "GitLab Automator",
   "version": "2.0.0",
-  "description": "Automatically changes the target branch when creating a GitLab Merge Request.",
+  "description": "A powerful extension for GitLab that automates the process of creating merge requests.",
   "permissions": [
     "storage",
     "cookies",
     "activeTab"
   ],
   "host_permissions": [
-    "*://*.gitlab.com/*",
-    "<all_urls>"
+    "*://*.gitlab.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "GitLab Automator Settings",
+    "default_title": "GitLab Automator",
     "default_icon": {
-      "48": "icon.png"
+      "16": "logo/icon-16.png",
+      "32": "logo/icon-32.png",
+      "48": "logo/icon-48.png",
+      "128": "logo/icon-128.png"
     }
   },
   "content_scripts": [
     {
       "matches": [
-        "*://*.gitlab.com/*",
-        "<all_urls>"
+        "*://gitlab.com/*",
+        "*://*.gitlab.com/*"
       ],
       "js": [
         "content.js"
@@ -32,6 +34,9 @@
     }
   ],
   "icons": {
-    "48": "icon.png"
+    "16": "logo/icon-16.png",
+    "32": "logo/icon-32.png",
+    "48": "logo/icon-48.png",
+    "128": "logo/icon-128.png"
   }
 }

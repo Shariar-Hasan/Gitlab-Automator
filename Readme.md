@@ -1,19 +1,76 @@
 # GitLab Automator
 
-> 🚀 A Chrome extension that automatically optimizes GitLab merge request creation by setting intelligent defaults and providing quick branch switching capabilities.
+<div align="center">
 
-## ✨ Features
+> 🚀 **A modern, powerful Chrome Extension to streamline GitLab Merge Requests with intelligent branch selection, live search, per-project overrides, and aesthetic UI personalization.**
 
-- 🎯 **Auto-Development Targeting**: Automatically redirects to set `development` as the default target branch
-- � **Source Branch Protection**: Automatically prevents source branch deletion by unchecking the delete option
-- 🔄 **Quick Branch Toggle**: One-click button to switch between `development` and `main` target branches
-- 🚫 **Smart Branch Logic**: Prevents toggle button when source branch is `development` (avoids conflicts)
-- 🎨 **Native Integration**: Seamlessly integrates with GitLab's existing UI without disrupting workflow
-- ⚡ **Zero-Click Setup**: Works automatically - no manual dropdown selections needed
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
+[![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS%20v4-38b2ac.svg)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 📦 Installation
+</div>
 
-### Method 1: Install from Source
+---
+
+## ✨ Features Overview
+
+### 1. 🔀 Smart Merge Request Creation Modal
+- **Live Branch Search**: Quickly search and filter through repository branches in real-time powered by GitLab's native `refs?search=` endpoint.
+- **Searchable Source & Target Branches**: Both Source and Target branches feature searchable dropdowns with keyboard navigation and instant autocomplete.
+- **Visual Branch Flow**: Clear visual indicator showing `Source Branch ➔ Target Branch` before generating the MR.
+- **Pre-filled Metadata**: Add optional MR Title and Description right from the extension popup.
+- **One-Click Pre-populated Navigation**: Directly launches GitLab's `/merge_requests/new` page with all branch selections, title, description, and source branch deletion preference pre-configured.
+
+---
+
+### 2. 📂 Project Management & Active Tracking
+- **Active Project Accordion**: Automatically detects when you are browsing a GitLab project and tracks it in the popup.
+- **Project Overrides**: Configure per-project rules:
+  - Custom display name / alias
+  - Project color badge (choose from curated presets or any custom color via HTML5 color picker)
+  - Target branch override (e.g. `development`, `staging`, `main`)
+  - "Delete source branch" preference override
+- **Sliding Action Buttons**: Modern hover interactions — action buttons (Create MR, Settings, More) slide in smoothly on project rows.
+- **Floating Context Menu**: Fixed-position three-dot popover to enable/disable or remove projects without UI clipping.
+- **Add to Exception (Blacklist)**: Easily exclude projects from auto-tracking with a single click and confirmation warning.
+
+---
+
+### 3. 🎨 Aesthetic & Deep Personalization
+- **Theme Modes**: Seamless **Light Mode** and **Dark Mode** support built with shadcn-inspired aesthetics.
+- **Accent Color Customization**:
+  - 8 curated presets: *GitLab Blue, Violet, Emerald, Rose, Amber, Cyan, Orange, Slate*.
+  - **Custom Color Picker**: Choose any hex color to personalize buttons, highlights, switches, and gradients.
+- **Corner Roundness Control**:
+  - **Sharp (`none` / 0px)**: Modern, brutalist sharp-cornered look.
+  - **Soft (`sm` / 4px)**: Clean, subtle rounding.
+  - **Rounded (`md` / 12px)**: Default smooth, rounded container design.
+- **Thin Scrollbars**: Universal 4px custom scrollbars designed for both light and dark backgrounds.
+
+---
+
+### 4. ⚙️ Categorized Global Settings
+Settings are cleanly organized into 5 distinct cards:
+1. **Appearance & Theme**: Switch between light/dark mode, choose accent colors, and adjust corner roundness.
+2. **Branch Automation**: Set global default target branch (e.g., `development`) and toggle automatic deletion of source branches.
+3. **Auto-Sync & Project Exceptions**: Toggle auto-tracking of visited GitLab repositories and manage blacklisted projects.
+4. **GitLab Authentication**: Live status badge showing auto-captured session credentials (host, username, last sync time), plus optional Personal Access Token (PAT) input.
+5. **Config & Backup**: Full JSON backup export, configuration import, and one-click reset to defaults.
+
+---
+
+### 5. 🤖 Content Script & In-Page Automation
+- **Automatic Target Branch Redirection**: Visiting a new merge request page automatically sets your preferred target branch if none was specified.
+- **Source Branch Safety**: Automatically sets the "Delete source branch" checkbox according to your global or project-specific preference.
+- **Auto-Auth Extractor**: Transparently captures session tokens (CSRF, cookies, localStorage) upon visiting GitLab pages so API branch search works immediately.
+
+---
+
+## 📦 Installation & Setup
+
+### Install from Source
 
 1. **Clone the repository**:
    ```bash
@@ -21,212 +78,97 @@
    cd Gitlab-Automator
    ```
 
-2. **Load in Chrome**:
-   - Open Chrome and go to `chrome://extensions/`
-   - Toggle **"Developer mode"** (top-right corner)
-   - Click **"Load unpacked"**
-   - Select the `gitlab-automation` folder
-   - Extension is now active! 🎉
-
-### Method 2: Install from Chrome Web Store
-*Coming soon...*
-
-## 🚀 Usage
-
-### Automatic Behavior
-When you navigate to any GitLab merge request creation page, the extension automatically:
-
-1. **Sets target branch to `development`** (if no target branch is specified in URL)
-2. **Unchecks "Delete source branch"** option to protect your source branch
-3. **Adds a toggle button** next to the target branch title
-
-### Toggle Button Features
-The extension adds a **yellow toggle button** next to the target branch title:
-
-| Current Target | Button Text | Action |
-|----------------|-------------|--------|
-| `development` | "Change to main" | 🔄 Switches target to `main` branch |
-| `main` | "Change to development" | 🔄 Switches target to `development` branch |
-
-### Usage Steps
-1. **Navigate** to any GitLab merge request page:
-   ```
-   https://gitlab.com/your-project/-/merge_requests/new
-   ```
-
-2. **Automatic setup**: Extension immediately sets `development` as target and protects source branch
-
-3. **Optional**: Click the yellow toggle button to switch to `main` if needed
-
-4. **Fill out** your merge request details (title, description, etc.)
-
-5. **Submit** using GitLab's standard "Create merge request" button
-
-### 💡 Pro Tips
-- The extension works via URL parameters - changes are instant
-- Source branch deletion is always disabled by default for safety
-- Toggle button won't appear if your source branch is `development` (prevents conflicts)
-- The extension stops monitoring after 5 seconds to preserve performance
-
-## 🔄 Updating the Extension
-
-### When Repository Updates
-If this repository receives updates and you want the latest features:
-
-1. **Pull latest changes**:
+2. **Install dependencies & Build**:
    ```bash
-   cd path/to/Gitlab-Automator
-   git pull origin main
+   npm install
+   npm run build
    ```
 
-2. **Reload the extension**:
-   - Go to `chrome://extensions/`
-   - Find "gitlab-automation"
-   - Click the **🔄 reload** button (circular arrow icon)
-   - Or use the keyboard shortcut: `Ctrl+R` while on the extensions page
+3. **Load in Chrome**:
+   - Open Chrome and navigate to `chrome://extensions/`
+   - Enable **"Developer mode"** in the top-right corner.
+   - Click **"Load unpacked"**.
+   - Select the `dist/` directory generated inside the project folder.
+   - The GitLab Automator extension is now installed and active! 🎉
 
-3. **Verify update**:
-   - Check the version number in `manifest.json`
-   - Test the extension on a GitLab MR page
+---
 
-### Automatic Update Notifications
-*Currently manual updates only. Auto-update feature planned for future releases.*
+## 🛠️ Tech Stack
 
-## ⚙️ How It Works
+- **Framework**: React 18
+- **Language**: TypeScript
+- **Bundler**: Vite
+- **Styling**: Tailwind CSS v4 + Lucide Icons
+- **Platform**: Chrome Extensions Manifest V3
 
-The extension employs a smart URL-based approach with DOM manipulation:
-
-```javascript
-// Core functionality pipeline
-1. 🔗 Check URL parameters for target branch
-2. 🔄 Auto-redirect to set 'development' as default (if not set)
-3. 🔒 Monitor and uncheck 'delete source branch' checkbox
-4. 🎯 Inject toggle button next to target branch title
-5. ⚡ Enable instant branch switching via URL parameters
-6. ⏱️ Stop monitoring after 5 seconds for performance
-```
-
-### Technical Implementation
-- **URL Parameter Manipulation**: Uses `URLSearchParams` for instant branch switching
-- **DOM Polling**: Monitors checkbox state and injects toggle button with `setInterval`
-- **Conditional Logic**: Prevents toggle when source branch equals `development`
-- **Performance Optimization**: Auto-stops monitoring after 5 seconds
-- **Event Handling**: Custom click handler for branch toggle functionality
-
-### Code Flow
-```javascript
-// On page load
-if (no target branch in URL) → redirect with development target
-while (monitoring active) {
-  - uncheck delete source branch checkbox
-  - add toggle button (if not exists and source ≠ development)
-}
-stop after 5 seconds
-```
+---
 
 ## 📁 Project Structure
 
 ```
-gitlab-automation/
-├── 📄 manifest.json      # Extension configuration & permissions
-├── ⚙️ content.js         # Core functionality & DOM manipulation
-├── 🖼️ icon.png           # Extension icon (48x48px)
-└── 📚 Readme.md          # This documentation
+Gitlab-Automator/
+├── src/
+│   ├── content/                # Content scripts injected into GitLab pages
+│   │   ├── authExtractor.ts    # Captures session auth & CSRF tokens
+│   │   ├── branchAutomation.ts # Manages branch redirects & checkbox states
+│   │   ├── GitLabAdapter.ts    # Interacts with GitLab DOM elements
+│   │   └── index.ts            # Content script entry point & message listener
+│   ├── popup/                  # Extension popup UI (React)
+│   │   ├── components/         # Modular UI components
+│   │   │   ├── CreateMergeRequestModal.tsx  # Branch search & MR creator
+│   │   │   ├── CurrentProjectCard.tsx       # Active repository accordion
+│   │   │   ├── Header.tsx                   # Top header with global toggle
+│   │   │   ├── ProjectOverrideDialog.tsx    # Add new project modal
+│   │   │   ├── ProjectOverrides.tsx         # Projects list with hover actions
+│   │   │   ├── ProjectSettingsDialog.tsx    # Per-project settings modal
+│   │   │   ├── Settings.tsx                 # Categorized global settings cards
+│   │   │   └── Tabs.tsx                     # Home / Settings tab switcher
+│   │   ├── App.tsx             # Main React application component
+│   │   ├── index.css           # Global theme, scrollbars & dynamic radius CSS
+│   │   └── main.tsx            # React root mount
+│   └── shared/                 # Shared utilities, storage & types
+│       ├── services/           # GitLab branch search service
+│       ├── storage/            # Chrome storage managers (config & auth)
+│       ├── types/              # TypeScript definitions & interfaces
+│       └── utils/              # Theme & branch helper utilities
+├── manifest.json               # Manifest V3 extension configuration
+├── vite.config.ts              # Vite build setup for Chrome extension
+└── package.json                # Project dependencies and scripts
 ```
 
-## 🌐 Compatibility
+---
 
-| Browser | Support | Version |
-|---------|---------|---------|
-| Google Chrome | ✅ Full | 88+ |
-| Microsoft Edge | ✅ Full | 88+ |
-| Brave Browser | ✅ Full | Latest |
-| Opera | ✅ Full | Latest |
-| Firefox | ❌ Not supported | Manifest V3 required |
+## 📝 Available Scripts
 
-> **Note**: Uses Manifest V3 for enhanced security and performance.
+| Command | Description |
+|---|---|
+| `npm run dev` | Runs Vite in development mode |
+| `npm run build` | Compiles TypeScript and builds the production extension bundle into `dist/` |
+| `npm run preview` | Previews the production build locally |
+
+---
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how to get started:
+Contributions, issues, and feature requests are welcome!  
+Feel free to check the [issues page](https://github.com/Shariar-Hasan/Gitlab-Automator/issues).
 
-### Development Workflow
-1. **Fork** the repository
-2. **Create** a feature branch:
-   ```bash
-   git checkout -b feature/awesome-enhancement
-   ```
-3. **Make** your changes and test thoroughly
-4. **Commit** with descriptive messages:
-   ```bash
-   git commit -m "feat: add awesome enhancement for better UX"
-   ```
-5. **Push** to your fork:
-   ```bash
-   git push origin feature/awesome-enhancement
-   ```
-6. **Open** a Pull Request with detailed description
-
-### Development Setup
-```bash
-# Clone your fork
-git clone https://github.com/YOUR-USERNAME/Gitlab-Automator.git
-cd Gitlab-Automator
-
-# Load extension in Chrome for testing
-# (Follow installation steps above)
-```
-
-### Code Style
-- Use modern JavaScript (ES6+)
-- Comment complex logic
-- Follow existing naming conventions
-- Test on actual GitLab pages
-
-## 📝 License
-
-This project is **open source** and available under the [MIT License](LICENSE).
-
-Feel free to use, modify, and distribute as needed.
-
-## 🆘 Support & Troubleshooting
-
-### Common Issues
-- **Extension not working**: Ensure you're on a GitLab MR creation page (`*/merge_requests/new*`)
-- **Toggle button not appearing**: Refresh the page, or check if source branch is `development`
-- **Auto-redirect not working**: Clear browser cache and try again
-- **Checkbox keeps getting checked**: The extension monitors for 5 seconds - manual changes after this period will persist
-
-### Expected Behavior
-- ✅ Page redirects to set `development` target (if no target branch in URL)
-- ✅ "Delete source branch" checkbox gets unchecked automatically
-- ✅ Yellow toggle button appears next to target branch title
-- ✅ Toggle button switches between `development` ↔ `main`
-- ❌ Toggle button hidden when source branch = `development`
-
-### Get Help
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/Shariar-Hasan/Gitlab-Automator/issues)
-- 💡 **Feature Requests**: [Start a discussion](https://github.com/Shariar-Hasan/Gitlab-Automator/discussions)
-- 📧 **Direct Contact**: Create an issue for support
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'feat: Add AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
-## 🔗 Additional Info
+## 📄 License
 
-**Target URL Pattern**: `https://gitlab.com/*/-/merge_requests/new*`
-
-**Permissions Required**: 
-- `scripting` - To inject content scripts on GitLab pages
-
-**Privacy**: This extension only runs on GitLab.com and doesn't collect or transmit any user data. It works locally by manipulating URL parameters and DOM elements.
-
----
+Distributed under the **MIT License**. See `LICENSE` for more information.
 
 <div align="center">
 
-**Made with ❤️ for the GitLab community**
+**Made with ❤️ for developers using GitLab**
 
-⭐ Star this repo if it helped streamline your workflow!
+⭐ Star this repository if it helps streamline your daily workflow!
 
 </div>
-

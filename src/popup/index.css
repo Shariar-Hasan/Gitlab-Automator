@@ -90,10 +90,23 @@
 }
 
 /* Dynamic Border Radius Themes */
-[data-radius="none"] *:not(.color-swatch) {
+[data-radius="none"] .rounded-3xl,
+[data-radius="none"] .rounded-2xl,
+[data-radius="none"] .rounded-xl,
+[data-radius="none"] .rounded-lg,
+[data-radius="none"] .rounded-md,
+[data-radius="none"] .rounded {
   border-radius: 0px !important;
 }
 
+[data-radius="none"] button:not(.rounded-full):not(.color-swatch),
+[data-radius="none"] input:not([type="checkbox"]):not([type="radio"]),
+[data-radius="none"] textarea,
+[data-radius="none"] select {
+  border-radius: 0px !important;
+}
+
+[data-radius="sm"] .rounded-3xl,
 [data-radius="sm"] .rounded-2xl,
 [data-radius="sm"] .rounded-xl,
 [data-radius="sm"] .rounded-lg,
@@ -101,16 +114,10 @@
   border-radius: 4px !important;
 }
 
-[data-radius="sm"] button,
-[data-radius="sm"] input,
+[data-radius="sm"] button:not(.rounded-full):not(.color-swatch),
+[data-radius="sm"] input:not([type="checkbox"]):not([type="radio"]),
 [data-radius="sm"] textarea,
 [data-radius="sm"] select {
   border-radius: 4px !important;
 }
 
-[data-radius="none"] button,
-[data-radius="none"] input,
-[data-radius="none"] textarea,
-[data-radius="none"] select {
-  border-radius: 0px !important;
-}

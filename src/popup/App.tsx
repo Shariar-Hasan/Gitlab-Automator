@@ -167,7 +167,11 @@ export default function App() {
   const themeStyles = getThemeStyles(config.global.accentColor || '#2563eb');
 
   return (
-    <div className={isDarkMode ? 'dark' : ''} style={themeStyles}>
+    <div
+      className={isDarkMode ? 'dark' : ''}
+      style={themeStyles}
+      data-radius={config.global.borderRadius || 'md'}
+    >
       <div className="w-[385px] min-h-[500px] max-h-[600px] bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-x-hidden antialiased">
         {/* Header with Global ON/OFF Switch */}
         <Header enabled={config.global.enabled} onToggle={handleGlobalToggle} />

@@ -117,13 +117,13 @@ export function ProjectOverrides({
 
                 {/* Right default view: Target Branch Badge */}
                 <div className="flex items-center gap-2 shrink-0 transition-opacity duration-150 group-hover:opacity-0">
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700">
                     {project.targetBranch}
                   </span>
                 </div>
 
                 {/* Sliding Action Buttons on Hover */}
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-white/95 pl-3 py-1 rounded-lg backdrop-blur-xs shadow-xs border border-slate-200/80 dark:border-slate-800 translate-x-12 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200 ease-out z-10">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-white/95 dark:bg-slate-800/95 pl-3 py-1 rounded-lg backdrop-blur-xs shadow-xs border border-slate-200/80 dark:border-slate-800 translate-x-12 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200 ease-out z-10">
                   {/* Create MR */}
                   <button
                     type="button"

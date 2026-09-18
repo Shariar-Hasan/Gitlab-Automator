@@ -18,6 +18,8 @@ import {
   Sliders,
   ShieldBan,
   Palette,
+  Square,
+  Sparkles,
 } from 'lucide-react';
 import { authStorage } from '../../shared/storage/authStorage';
 import { THEME_ACCENT_PRESETS } from '../../shared/utils/theme';
@@ -124,13 +126,22 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
     return `${Math.floor(diff / 86400)}d ago`;
   };
 
+  const currentRadius = config.global.borderRadius || 'md';
+
   return (
-    <div className="space-y-4 text-xs text-slate-800 dark:text-slate-200 pb-2">
-      {/* 1. Appearance / Theme */}
+    <div className="space-y-3.5 text-xs text-slate-800 dark:text-slate-200 pb-2">
+      {/* ────────────────────────────────────────────────
+          Category 1: Appearance & UI Style
+         ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-3">
-        {/* Dark/Light mode */}
-        <div className="flex items-center justify-between">
-          <span className="font-semibold text-xs tracking-wide flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+        <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-semibold text-xs tracking-wide">
+          <Sparkles className="w-3.5 h-3.5 text-accent" />
+          <span>Appearance & Theme</span>
+        </div>
+
+        {/* Theme Mode */}
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
             {config.global.theme === 'dark' ? <Moon className="w-3.5 h-3.5 text-indigo-400" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
             <span>Theme Mode</span>
           </span>
@@ -162,12 +173,12 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
           </div>
         </div>
 
-        {/* UI Theme Accent Color */}
+        {/* UI Accent Color */}
         <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
               <Palette className="w-3.5 h-3.5 text-slate-400" />
-              <span>UI Accent Color</span>
+              <span>Accent Color</span>
             </span>
             <span className="text-[10px] font-mono text-slate-400">
               {config.global.accentColor || '#2563eb'}
@@ -183,7 +194,7 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
                   type="button"
                   onClick={() => onUpdateGlobal({ accentColor: preset.color })}
                   title={preset.name}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform cursor-pointer shadow-xs ${
+                  className={`color-swatch w-6 h-6 rounded-full flex items-center justify-center transition-transform cursor-pointer shadow-xs ${
                     isActive ? 'ring-2 ring-offset-2 ring-slate-800 dark:ring-offset-slate-900 scale-110' : 'hover:scale-105 opacity-80 hover:opacity-100'
                   }`}
                   style={{ backgroundColor: preset.color }}
@@ -196,7 +207,7 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
             {/* Custom Color Picker */}
             <label
               title="Custom Hex Color"
-              className={`relative w-6 h-6 rounded-full flex items-center justify-center transition-transform cursor-pointer border border-slate-300 dark:border-slate-600 shadow-xs ${
+              className={`color-swatch relative w-6 h-6 rounded-full flex items-center justify-center transition-transform cursor-pointer border border-slate-300 dark:border-slate-600 shadow-xs ${
                 !THEME_ACCENT_PRESETS.some((p) => p.color.toLowerCase() === (config.global.accentColor || '').toLowerCase())
                   ? 'ring-2 ring-offset-2 ring-slate-800 dark:ring-offset-slate-900 scale-110'
                   : 'hover:scale-105'
@@ -219,13 +230,64 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
             </label>
           </div>
         </div>
+
+        {/* Corner Rounding Style */}
+        <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+              <Square className="w-3.5 h-3.5 text-slate-400" />
+              <span>Corner Roundness</span>
+            </span>
+            <span className="text-[10px] text-slate-400 capitalize">
+              {currentRadius === 'none' ? 'Sharp (0px)' : currentRadius === 'sm' ? 'Soft (4px)' : 'Rounded (12px)'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1.5 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={() => onUpdateGlobal({ borderRadius: 'none' })}
+              className={`py-1 text-[11px] font-medium transition-all cursor-pointer ${
+                currentRadius === 'none'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              Sharp
+            </button>
+            <button
+              type="button"
+              onClick={() => onUpdateGlobal({ borderRadius: 'sm' })}
+              className={`py-1 text-[11px] font-medium transition-all cursor-pointer ${
+                currentRadius === 'sm'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              Soft
+            </button>
+            <button
+              type="button"
+              onClick={() => onUpdateGlobal({ borderRadius: 'md' })}
+              className={`py-1 text-[11px] font-medium transition-all cursor-pointer ${
+                currentRadius === 'md'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              Rounded
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* 2. Global Branch Automation Rules */}
+      {/* ────────────────────────────────────────────────
+          Category 2: Branch Automation Rules
+         ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-3">
-        <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
-          <Sliders className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-          <span>Branch Automation Defaults</span>
+        <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-semibold text-xs tracking-wide">
+          <Sliders className="w-3.5 h-3.5 text-accent" />
+          <span>Branch Automation</span>
         </div>
 
         {/* Global Default Target Branch */}
@@ -233,7 +295,7 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
           <div className="flex items-center justify-between">
             <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
               <GitBranch className="w-3 h-3 text-slate-400" />
-              <span>Global Default Target Branch</span>
+              <span>Default Target Branch</span>
             </label>
             {isSavedBranch && (
               <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-0.5">
@@ -247,12 +309,12 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
               value={targetBranchInput}
               onChange={(e) => setTargetBranchInput(e.target.value)}
               placeholder="e.g. development"
-              className="flex-1 px-2.5 py-1 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg outline-hidden font-mono focus:ring-1 focus:ring-blue-500"
+              className="flex-1 px-2.5 py-1 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg outline-hidden font-mono focus:ring-1 focus:ring-accent"
             />
             <button
               type="button"
               onClick={handleSaveDefaultBranch}
-              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors"
+              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-accent hover:bg-accent-hover text-white cursor-pointer transition-colors"
             >
               Save
             </button>
@@ -264,7 +326,7 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
           <div>
             <p className="text-xs font-medium text-slate-800 dark:text-slate-200">Delete Source Branch by Default</p>
             <p className="text-[10px] text-slate-400 dark:text-slate-500">
-              Sets <code className="font-mono">merge_request[force_remove_source_branch]</code> to true
+              Sets <code className="font-mono">force_remove_source_branch=true</code>
             </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -274,21 +336,23 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
               checked={config.global.defaultDeleteSourceBranch}
               onChange={(e) => onUpdateGlobal({ defaultDeleteSourceBranch: e.target.checked })}
             />
-            <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+            <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent"></div>
           </label>
         </div>
       </div>
 
-      {/* 3. Auto-Sync Project Links & Exceptions (Blacklist) */}
+      {/* ────────────────────────────────────────────────
+          Category 3: Auto-Sync & Project Exceptions
+         ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <span className="font-semibold text-xs tracking-wider flex items-center gap-1.5 uppercase text-slate-700 dark:text-slate-300">
-              <Link className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>Auto-Sync Visited Projects</span>
+            <span className="font-semibold text-xs tracking-wide flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
+              <Link className="w-3.5 h-3.5 text-accent" />
+              <span>Auto-Sync Projects</span>
             </span>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-              Automatically add GitLab projects to your list when visited
+              Automatically track GitLab projects when visited
             </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -298,16 +362,16 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
               checked={config.global.autoSyncVisitedProjects !== false}
               onChange={(e) => onUpdateGlobal({ autoSyncVisitedProjects: e.target.checked })}
             />
-            <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+            <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent"></div>
           </label>
         </div>
 
-        {/* Exclusion / Blacklist list */}
+        {/* Exclusion / Blacklist */}
         <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
               <ShieldBan className="w-3 h-3 text-slate-400" />
-              <span>Excluded Projects (Auto-sync Off)</span>
+              <span>Excluded Projects</span>
             </span>
             <span className="text-[10px] text-slate-400">
               {(config.global.autoSyncBlacklist || []).length} exceptions
@@ -319,8 +383,8 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
               type="text"
               value={newBlacklistEntry}
               onChange={(e) => setNewBlacklistEntry(e.target.value)}
-              placeholder="e.g. gitlab.com/company/internal-repo"
-              className="flex-1 px-2.5 py-1 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg outline-hidden font-mono focus:ring-1 focus:ring-blue-500"
+              placeholder="e.g. gitlab.com/company/repo"
+              className="flex-1 px-2.5 py-1 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg outline-hidden font-mono focus:ring-1 focus:ring-accent"
             />
             <button
               type="submit"
@@ -332,9 +396,8 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
             </button>
           </form>
 
-          {/* Blacklist tags */}
           {(config.global.autoSyncBlacklist || []).length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1 max-h-28 overflow-y-auto">
+            <div className="flex flex-wrap gap-1.5 pt-1 max-h-24 overflow-y-auto">
               {config.global.autoSyncBlacklist.map((entry) => (
                 <span
                   key={entry}
@@ -355,12 +418,14 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
         </div>
       </div>
 
-      {/* 4. GitLab Connection & PAT Token */}
+      {/* ────────────────────────────────────────────────
+          Category 4: GitLab Auth & Token
+         ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-2.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-            <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span className="text-xs font-semibold uppercase tracking-wider">GitLab Auth & Session</span>
+          <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-semibold text-xs tracking-wide">
+            <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+            <span>GitLab Authentication</span>
           </div>
           {authData?.lastUpdated ? (
             <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
@@ -414,7 +479,7 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
               value={patToken}
               onChange={(e) => setPatToken(e.target.value)}
               placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
-              className="flex-1 px-2.5 py-1 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg outline-hidden font-mono focus:ring-1 focus:ring-blue-500"
+              className="flex-1 px-2.5 py-1 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg outline-hidden font-mono focus:ring-1 focus:ring-accent"
             />
             <button
               type="button"
@@ -427,11 +492,13 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
         </div>
       </div>
 
-      {/* 5. Data Management */}
+      {/* ────────────────────────────────────────────────
+          Category 5: Backup & Reset
+         ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-2.5">
-        <span className="font-semibold text-xs uppercase tracking-wider flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+        <span className="font-semibold text-xs tracking-wide flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
           <SettingsIcon className="w-3.5 h-3.5 text-slate-400" />
-          <span>Config & Data</span>
+          <span>Config & Backup</span>
         </span>
 
         <div className="grid grid-cols-3 gap-2 pt-1">

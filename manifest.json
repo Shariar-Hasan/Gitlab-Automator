@@ -1,23 +1,37 @@
 {
-    "manifest_version": 3,
-    "name": "Github Automator",
-    "version": "1.0.0",
-    "description": "Add MR to development and disable auto-delete source branch.",
-    "permissions": [
-        "scripting"
-    ],
-    "content_scripts": [
-        {
-            "matches": [
-                "https://gitlab.com/*/-/merge_requests/new*"
-            ],
-            "js": [
-                "content.js"
-            ],
-            "run_at": "document_idle"
-        }
-    ],
-    "icons": {
-        "48": "icon.png"
+  "manifest_version": 3,
+  "name": "GitLab Merge Request Automator",
+  "version": "2.0.0",
+  "description": "Automatically changes the target branch when creating a GitLab Merge Request.",
+  "permissions": [
+    "storage",
+    "cookies",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://*.gitlab.com/*",
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "GitLab Automator Settings",
+    "default_icon": {
+      "48": "icon.png"
     }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.gitlab.com/*",
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "48": "icon.png"
+  }
 }

@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --accent-color: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light: rgba(37, 99, 235, 0.1);
+    --accent-border: rgba(37, 99, 235, 0.25);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.6);
+  }
+
+  .dark * {
+    scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.4);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.7);
+  }
+
+  html, body, #root {
+    width: 385px;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Dynamic Accent Theme Classes */
+.bg-accent {
+  background-color: var(--accent-color) !important;
+}
+
+.hover\:bg-accent-hover:hover {
+  background-color: var(--accent-hover) !important;
+}
+
+.text-accent {
+  color: var(--accent-color) !important;
+}
+
+.border-accent {
+  border-color: var(--accent-border) !important;
+}
+
+.bg-accent-light {
+  background-color: var(--accent-light) !important;
+}
+
+.ring-accent:focus {
+  --tw-ring-color: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+}
+
+.peer:checked ~ .peer-checked\:bg-accent {
+  background-color: var(--accent-color) !important;
+}
+
+/* Dynamic Border Radius Themes */
+[data-radius="none"] .rounded-3xl,
+[data-radius="none"] .rounded-2xl,
+[data-radius="none"] .rounded-xl,
+[data-radius="none"] .rounded-lg,
+[data-radius="none"] .rounded-md,
+[data-radius="none"] .rounded {
+  border-radius: 0px !important;
+}
+
+[data-radius="none"] button:not(.rounded-full):not(.color-swatch),
+[data-radius="none"] input:not([type="checkbox"]):not([type="radio"]),
+[data-radius="none"] textarea,
+[data-radius="none"] select {
+  border-radius: 0px !important;
+}
+
+[data-radius="sm"] .rounded-3xl,
+[data-radius="sm"] .rounded-2xl,
+[data-radius="sm"] .rounded-xl,
+[data-radius="sm"] .rounded-lg,
+[data-radius="sm"] .rounded-md {
+  border-radius: 4px !important;
+}
+
+[data-radius="sm"] button:not(.rounded-full):not(.color-swatch),
+[data-radius="sm"] input:not([type="checkbox"]):not([type="radio"]),
+[data-radius="sm"] textarea,
+[data-radius="sm"] select {
+  border-radius: 4px !important;
+}
+

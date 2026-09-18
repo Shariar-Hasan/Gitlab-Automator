@@ -1,6 +1,6 @@
 {
   "name": "gitlab-automator",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "> 🚀 A Chrome extension that automatically optimizes GitLab merge request creation by setting intelligent defaults and providing quick branch switching capabilities.",
   "main": "content.js",
   "type": "module",

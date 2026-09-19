@@ -1,6 +1,6 @@
 import { configStorage } from '../shared/storage/configStorage';
 import { GitLabAdapter } from './GitLabAdapter';
-import { resolveTargetBranch, shouldSwitchBranch } from './branchAutomation';
+import { resolveTargetBranchAndOptions, shouldSwitchBranch } from './branchAutomation';
 import { NavigationObserver } from './navigationObserver';
 import { LoadingOverlay } from './overlay/loadingOverlay';
 import { logger } from '../shared/utils/logger';
@@ -145,32 +145,31 @@ async function runAutomation() {
 
   logger.log('State:', { projectKey, sourceBranch, currentTargetBranch });
 
-  const resolvedBranch = resolveTargetBranch(config, projectKey);
+  const { targetBranch: resolvedBranch, deleteSourceBranch } = resolveTargetBranchAndOptions(
+    config,
+    projectKey,
+    sourceBranch
+  );
+
+  logger.log('Branch resolution:', { sourceBranch, currentTargetBranch, resolvedBranch, deleteSourceBranch });
   
   if (shouldSwitchBranch(sourceBranch, currentTargetBranch, resolvedBranch)) {
-    logger.log(`Switching target branch to ${resolvedBranch}`);
+    logger.log(`Switching target branch to ${resolvedBranch} (deleteSource: ${deleteSourceBranch})`);
     
-    // Show UI
+    // Show full-page overlay
     overlay.show(sourceBranch || 'source', resolvedBranch!);
 
     // Mark as switched in this session to prevent loops
     sessionStorage.setItem('gitlab_automator_switched', 'true');
 
-    // Make the switch
+    // Make the switch with target branch and delete source branch in URL
     setTimeout(() => {
-      GitLabAdapter.setTargetBranch(resolvedBranch!);
-      // The page will reload/navigate, so overlay will naturally disappear,
-      // but just in case it's an SPA update:
-      setTimeout(() => overlay.hide(), 2000);
-    }, 500);
+      GitLabAdapter.setTargetBranch(resolvedBranch!, deleteSourceBranch);
+      setTimeout(() => overlay.hide(), 2500);
+    }, 350);
   } else {
-    // Check or uncheck delete source branch according to project or global config
-    const shouldDelete =
-      projectKey && config.projects[projectKey]?.deleteSourceBranch !== undefined
-        ? config.projects[projectKey].deleteSourceBranch!
-        : config.global.defaultDeleteSourceBranch;
-
-    GitLabAdapter.setDeleteSourceBranch(shouldDelete);
+    // Already on correct target branch: ensure delete source branch checkbox matches rule
+    GitLabAdapter.setDeleteSourceBranch(deleteSourceBranch);
   }
 }
 

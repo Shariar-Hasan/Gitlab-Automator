@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { ExtensionConfig, GlobalConfig, GitLabAuthData } from '../../shared/types';
+import { ExtensionConfig, GlobalConfig, GitLabAuthData, DEFAULT_BRANCH_RULES } from '../../shared/types';
 import {
   Settings as SettingsIcon,
   Download,
@@ -26,6 +26,7 @@ import {
 import { authStorage } from '../../shared/storage/authStorage';
 import { THEME_ACCENT_PRESETS } from '../../shared/utils/theme';
 import { UpdateService, UpdateCheckResult } from '../../shared/services/updateService';
+import { BranchRulesEditor } from './BranchRulesEditor';
 
 interface Props {
   config: ExtensionConfig;
@@ -311,60 +312,33 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal, updateInfo
       {/* ────────────────────────────────────────────────
           Category 2: Branch Automation Rules
          ──────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-3">
-        <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-semibold text-xs tracking-wide">
-          <Sliders className="w-3.5 h-3.5 text-accent" />
-          <span>Branch Automation</span>
-        </div>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-3.5">
+        <BranchRulesEditor
+          rules={config.global.branchRules || DEFAULT_BRANCH_RULES}
+          onChange={(branchRules) => onUpdateGlobal({ branchRules })}
+          onResetToDefaults={() => onUpdateGlobal({ branchRules: DEFAULT_BRANCH_RULES })}
+          defaultBranch={config.global.defaultTargetBranch || 'development'}
+        />
 
-        {/* Global Default Target Branch */}
-        <div className="space-y-1">
+        {/* Global Fallback & Options */}
+        <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
-              <GitBranch className="w-3 h-3 text-slate-400" />
-              <span>Default Target Branch</span>
+            <div>
+              <p className="text-xs font-medium text-slate-800 dark:text-slate-200">Delete Source Branch by Default</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                Fallback if rule doesn't specify
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={config.global.defaultDeleteSourceBranch}
+                onChange={(e) => onUpdateGlobal({ defaultDeleteSourceBranch: e.target.checked })}
+              />
+              <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent"></div>
             </label>
-            {isSavedBranch && (
-              <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-0.5">
-                <CheckCircle2 className="w-3 h-3" /> Saved
-              </span>
-            )}
           </div>
-          <div className="flex gap-1.5">
-            <input
-              type="text"
-              value={targetBranchInput}
-              onChange={(e) => setTargetBranchInput(e.target.value)}
-              placeholder="e.g. development"
-              className="flex-1 px-2.5 py-1 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg outline-hidden font-mono focus:ring-1 focus:ring-accent"
-            />
-            <button
-              type="button"
-              onClick={handleSaveDefaultBranch}
-              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-accent hover:bg-accent-hover text-white cursor-pointer transition-colors"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-
-        {/* Default Delete Source Branch */}
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-slate-800 dark:text-slate-200">Delete Source Branch by Default</p>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500">
-              Sets <code className="font-mono">force_remove_source_branch=true</code>
-            </p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={config.global.defaultDeleteSourceBranch}
-              onChange={(e) => onUpdateGlobal({ defaultDeleteSourceBranch: e.target.checked })}
-            />
-            <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent"></div>
-          </label>
         </div>
       </div>
 

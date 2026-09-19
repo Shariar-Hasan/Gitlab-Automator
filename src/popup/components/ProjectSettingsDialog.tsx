@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ProjectConfig } from '../../shared/types';
+import { ProjectConfig, BranchRule, DEFAULT_BRANCH_RULES } from '../../shared/types';
 import { X, Sliders, Palette, GitBranch, Trash2, Check } from 'lucide-react';
+import { BranchRulesEditor } from './BranchRulesEditor';
+import { BranchSuggestInput } from './BranchSuggestInput';
+import { BranchService } from '../../shared/services/branchService';
 
 interface Props {
   isOpen: boolean;
@@ -33,6 +36,9 @@ export function ProjectSettingsDialog({
   const [colorTag, setColorTag] = useState('blue');
   const [targetBranch, setTargetBranch] = useState('');
   const [deleteSourceBranch, setDeleteSourceBranch] = useState<'inherit' | 'true' | 'false'>('inherit');
+  const [useCustomRules, setUseCustomRules] = useState(false);
+  const [branchRules, setBranchRules] = useState<BranchRule[]>(DEFAULT_BRANCH_RULES);
+  const [projectBranches, setProjectBranches] = useState<string[]>([]);
 
   useEffect(() => {
     if (project) {
@@ -44,6 +50,19 @@ export function ProjectSettingsDialog({
       } else {
         setDeleteSourceBranch(project.deleteSourceBranch ? 'true' : 'false');
       }
+      setUseCustomRules(!!project.useCustomBranchRules);
+      setBranchRules(
+        project.branchRules && project.branchRules.length > 0
+          ? project.branchRules
+          : DEFAULT_BRANCH_RULES
+      );
+
+      // Load repository branches for suggestions
+      BranchService.searchBranches(project.projectKey, '').then((branches) => {
+        if (Array.isArray(branches)) {
+          setProjectBranches(branches);
+        }
+      });
     }
   }, [project, globalDefaultBranch]);
 
@@ -59,15 +78,17 @@ export function ProjectSettingsDialog({
         deleteSourceBranch === 'inherit'
           ? undefined
           : deleteSourceBranch === 'true',
+      useCustomBranchRules: useCustomRules,
+      branchRules: useCustomRules ? branchRules : undefined,
     });
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[95vh] text-slate-900 dark:text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="w-full max-w-[370px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[570px] text-slate-900 dark:text-slate-100">
         {/* Header */}
-        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <div className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <h3 className="text-sm font-semibold tracking-wide">Project Settings</h3>
@@ -81,10 +102,12 @@ export function ProjectSettingsDialog({
           </button>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 text-xs">
-          {/* Project Key Indicator */}
-          <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200/70 dark:border-slate-700 font-mono text-[11px] text-slate-600 dark:text-slate-300 truncate">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Scrollable Body */}
+          <div className="p-3.5 space-y-3.5 text-xs overflow-y-auto flex-1 min-h-0">
+            {/* Project Key Indicator */}
+            <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200/70 dark:border-slate-700 font-mono text-[11px] text-slate-600 dark:text-slate-300 truncate">
             {project.projectKey}
           </div>
 
@@ -152,12 +175,18 @@ export function ProjectSettingsDialog({
               <GitBranch className="w-3.5 h-3.5 text-slate-400" />
               <span>Default Target Branch</span>
             </label>
-            <input
-              type="text"
+            <BranchSuggestInput
               value={targetBranch}
-              onChange={(e) => setTargetBranch(e.target.value)}
+              onChange={setTargetBranch}
               placeholder={`Default (${globalDefaultBranch})`}
-              className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-mono outline-hidden focus:ring-2 focus:ring-blue-500"
+              presets={[
+                { value: 'development', label: 'development', badge: 'Default' },
+                { value: 'main', label: 'main', badge: 'Main' },
+                { value: 'master', label: 'master', badge: 'Branch' },
+                { value: 'staging', label: 'staging', badge: 'Branch' },
+              ]}
+              projectBranches={projectBranches}
+              icon={<GitBranch className="w-3 h-3 text-slate-400" />}
             />
           </div>
 
@@ -204,24 +233,61 @@ export function ProjectSettingsDialog({
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-xs cursor-pointer"
-            >
-              Save Changes
-            </button>
+          {/* Custom Branch Routing Toggle & Editor */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
+                  Custom Branch Routing
+                </span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                  Override global routing rules for this project
+                </span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={useCustomRules}
+                  onChange={(e) => setUseCustomRules(e.target.checked)}
+                />
+                <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+
+            {useCustomRules && (
+              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                <BranchRulesEditor
+                  rules={branchRules}
+                  onChange={setBranchRules}
+                  onResetToDefaults={() => setBranchRules(DEFAULT_BRANCH_RULES)}
+                  defaultBranch={targetBranch.trim() || globalDefaultBranch}
+                  projectKey={project.projectKey}
+                  availableBranches={projectBranches}
+                />
+              </div>
+            )}
           </div>
-        </form>
-      </div>
+        </div>
+
+        {/* Pinned Sticky Footer */}
+        <div className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium cursor-pointer transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-xs cursor-pointer transition-colors"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
     </div>
-  );
+  </div>
+);
 }

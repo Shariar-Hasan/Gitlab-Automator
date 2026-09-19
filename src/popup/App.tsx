@@ -8,6 +8,8 @@ import { ProjectOverrides } from './components/ProjectOverrides';
 import { Settings } from './components/Settings';
 import { CreateMergeRequestModal } from './components/CreateMergeRequestModal';
 import { ProjectSettingsDialog } from './components/ProjectSettingsDialog';
+import { UpdateBanner } from './components/UpdateBanner';
+import { UpdateService, UpdateCheckResult } from '../shared/services/updateService';
 import { getThemeStyles } from '../shared/utils/theme';
 
 export default function App() {
@@ -29,6 +31,10 @@ export default function App() {
     deleteSourceBranch: false,
   });
 
+  // Update Check State
+  const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
+  const [isUpdateDismissed, setIsUpdateDismissed] = useState(false);
+
   // Project Settings Dialog state
   const [editingProject, setEditingProject] = useState<ProjectConfig | null>(null);
 
@@ -48,6 +54,17 @@ export default function App() {
       }
 
       setLoading(false);
+
+      // Quietly check for GitHub updates if autoCheckUpdates is enabled (default)
+      if (savedConfig.global.autoCheckUpdates !== false) {
+        UpdateService.checkForUpdates().then((result) => {
+          if (result.hasUpdate) {
+            setUpdateInfo(result);
+          }
+        }).catch(() => {
+          // Quiet ignore
+        });
+      }
     };
     loadData();
   }, []);
@@ -197,6 +214,14 @@ export default function App() {
       data-radius={config.global.borderRadius || 'md'}
     >
       <div className="w-[385px] min-h-[500px] max-h-[600px] bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-x-hidden antialiased">
+        {/* Top Update Alert Banner */}
+        {updateInfo?.hasUpdate && !isUpdateDismissed && (
+          <UpdateBanner
+            updateInfo={updateInfo}
+            onDismiss={() => setIsUpdateDismissed(true)}
+          />
+        )}
+
         {/* Header with Global ON/OFF Switch */}
         <Header enabled={config.global.enabled} onToggle={handleGlobalToggle} />
 
@@ -238,6 +263,11 @@ export default function App() {
               }}
               onReset={handleReset}
               onUpdateGlobal={handleUpdateGlobal}
+              updateInfo={updateInfo}
+              onUpdateFound={(result) => {
+                setUpdateInfo(result);
+                setIsUpdateDismissed(false);
+              }}
             />
           )}
         </div>

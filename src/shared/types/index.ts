@@ -9,6 +9,8 @@ export interface GlobalConfig {
   autoSyncVisitedProjects: boolean;
   autoSyncBlacklist: string[];
   defaultDeleteSourceBranch: boolean;
+  autoCheckUpdates?: boolean;
+  lastUpdateCheckTime?: number;
 }
 
 export interface GitLabAuthData {
@@ -51,6 +53,7 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
     autoSyncVisitedProjects: true,
     autoSyncBlacklist: [],
     defaultDeleteSourceBranch: false,
+    autoCheckUpdates: true,
   },
   projects: {},
 };

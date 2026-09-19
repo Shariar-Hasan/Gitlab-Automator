@@ -9,7 +9,9 @@
     "activeTab"
   ],
   "host_permissions": [
-    "*://*.gitlab.com/*"
+    "*://*.gitlab.com/*",
+    "https://api.github.com/*",
+    "https://raw.githubusercontent.com/*"
   ],
   "action": {
     "default_popup": "popup.html",

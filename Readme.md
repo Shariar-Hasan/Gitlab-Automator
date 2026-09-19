@@ -17,6 +17,7 @@
 ## ✨ Features Overview
 
 ### 1. 🔀 Intelligent Branch Routing Automation
+- **Strict Query Parameter Guard**: Automation strictly requires a valid source branch in the URL query parameters (`merge_request[source_branch]` or `source_branch`). If opened without source branch query params or if the source branch doesn't match any configured routing rule, the automation script safely halts and will **never** trigger unnecessary redirects.
 - **Target Branch Auto-Resolution**: When visiting GitLab's `/-/merge_requests/new` page, the extension automatically determines and routes the merge request to the correct target branch based on configurable rules:
   - **Default Rule 1**: Source `development` ➔ Target `main` (Release workflow)
   - **Default Rule 2**: Source `*` (any branch) ➔ Target `development` (Feature/Hotfix workflow)

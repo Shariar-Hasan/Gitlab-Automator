@@ -1,9 +1,35 @@
+export interface LoadingOverlayOptions {
+  theme?: 'light' | 'dark';
+  accentColor?: string;
+  borderRadius?: 'none' | 'sm' | 'md';
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const cleanHex = hex.replace('#', '');
+  if (cleanHex.length === 6) {
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return hex;
+}
+
 export class LoadingOverlay {
   private overlay: HTMLElement | null = null;
   private shadowRoot: ShadowRoot | null = null;
 
-  show(sourceBranch: string, targetBranch: string) {
+  show(sourceBranch: string, targetBranch: string, options?: LoadingOverlayOptions) {
     if (this.overlay) return;
+
+    const theme = options?.theme || 'light';
+    const isDark = theme === 'dark';
+    const accent = options?.accentColor || '#2563eb';
+    const accentLight = hexToRgba(accent, 0.12);
+    const accentBorder = hexToRgba(accent, 0.28);
+
+    const cardRadius = options?.borderRadius === 'none' ? '4px' : options?.borderRadius === 'sm' ? '8px' : '16px';
+    const branchesRadius = options?.borderRadius === 'none' ? '2px' : options?.borderRadius === 'sm' ? '6px' : '10px';
 
     this.overlay = document.createElement('div');
     this.overlay.id = 'gitlab-automator-overlay-root';
@@ -21,12 +47,29 @@ export class LoadingOverlay {
 
     const style = document.createElement('style');
     style.textContent = `
+      :host {
+        --accent: ${accent};
+        --accent-light: ${accentLight};
+        --accent-border: ${accentBorder};
+        --bg-card: ${isDark ? '#0f172a' : '#ffffff'};
+        --border-card: ${isDark ? '#334155' : '#e2e8f0'};
+        --text-primary: ${isDark ? '#f8fafc' : '#0f172a'};
+        --text-secondary: ${isDark ? '#94a3b8' : '#64748b'};
+        --bg-branches: ${isDark ? '#1e293b' : '#f8fafc'};
+        --border-branches: ${isDark ? '#334155' : '#e2e8f0'};
+        --text-source-branch: ${isDark ? '#e2e8f0' : '#1e293b'};
+        --text-arrow: ${isDark ? '#64748b' : '#94a3b8'};
+        --card-radius: ${cardRadius};
+        --branches-radius: ${branchesRadius};
+        --spinner-track: ${isDark ? '#334155' : '#e2e8f0'};
+        --box-shadow: ${isDark ? '0 25px 50px -12px rgba(0, 0, 0, 0.65)' : '0 25px 50px -12px rgba(0, 0, 0, 0.25)'};
+      }
       .overlay-bg {
         position: fixed;
         inset: 0;
-        background-color: rgba(15, 23, 42, 0.65);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
+        background-color: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -34,16 +77,16 @@ export class LoadingOverlay {
         animation: fadeIn 0.15s ease-out;
       }
       .card {
-        background: #ffffff;
-        border-radius: 16px;
+        background: var(--bg-card);
+        border-radius: var(--card-radius);
         padding: 24px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        box-shadow: var(--box-shadow);
         display: flex;
         flex-direction: column;
         align-items: center;
         max-width: 360px;
         width: 90%;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-card);
         text-align: center;
       }
       .badge {
@@ -51,30 +94,30 @@ export class LoadingOverlay {
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #2563eb;
-        background: #eff6ff;
+        color: var(--accent);
+        background: var(--accent-light);
         padding: 2px 8px;
         border-radius: 9999px;
         margin-bottom: 12px;
-        border: 1px solid #dbeafe;
+        border: 1px solid var(--accent-border);
       }
       .spinner {
         width: 36px;
         height: 36px;
-        border: 3.5px solid #e2e8f0;
-        border-top-color: #2563eb;
+        border: 3.5px solid var(--spinner-track);
+        border-top-color: var(--accent);
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
         margin-bottom: 14px;
       }
       .title {
-        color: #0f172a;
+        color: var(--text-primary);
         font-weight: 700;
         font-size: 15px;
         margin: 0 0 4px 0;
       }
       .subtitle {
-        color: #64748b;
+        color: var(--text-secondary);
         font-size: 11px;
         margin: 0 0 14px 0;
       }
@@ -83,10 +126,10 @@ export class LoadingOverlay {
         align-items: center;
         justify-content: center;
         gap: 8px;
-        background: #f8fafc;
+        background: var(--bg-branches);
         padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
+        border-radius: var(--branches-radius);
+        border: 1px solid var(--border-branches);
         width: 100%;
         box-sizing: border-box;
       }
@@ -94,17 +137,17 @@ export class LoadingOverlay {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         font-size: 12px;
         font-weight: 600;
-        color: #1e293b;
+        color: var(--text-source-branch);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 120px;
       }
       .branch.target {
-        color: #2563eb;
+        color: var(--accent);
       }
       .arrow {
-        color: #94a3b8;
+        color: var(--text-arrow);
         font-size: 14px;
         flex-shrink: 0;
       }

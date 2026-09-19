@@ -40,6 +40,11 @@ export function resolveTargetBranchAndOptions(
     return { targetBranch: null, deleteSourceBranch: defaultDelete };
   }
 
+  if (!sourceBranch) {
+    logger.log('No source branch provided in query params. Skipping automation.');
+    return { targetBranch: null, deleteSourceBranch: defaultDelete };
+  }
+
   const project = projectKey ? config.projects[projectKey] : null;
   if (project && !project.enabled) {
     logger.log(`Automation disabled for project ${projectKey}`);
@@ -61,40 +66,25 @@ export function resolveTargetBranchAndOptions(
   }
 
   // 2. Evaluate rules against sourceBranch
-  if (sourceBranch) {
-    for (const rule of activeRules) {
-      if (matchBranchPattern(rule.sourcePattern, sourceBranch)) {
-        // Prevent targeting the exact same branch as source
-        if (rule.targetBranch.toLowerCase() !== sourceBranch.toLowerCase()) {
-          const deleteSource = rule.deleteSourceBranch !== undefined ? rule.deleteSourceBranch : projectDelete;
-          logger.log(`Matched rule [${rule.sourcePattern} -> ${rule.targetBranch}] for source "${sourceBranch}"`);
-          return {
-            targetBranch: rule.targetBranch,
-            deleteSourceBranch: deleteSource,
-            matchedRule: rule,
-          };
-        }
+  for (const rule of activeRules) {
+    if (matchBranchPattern(rule.sourcePattern, sourceBranch)) {
+      // Prevent targeting the exact same branch as source
+      if (rule.targetBranch.toLowerCase() !== sourceBranch.toLowerCase()) {
+        const deleteSource = rule.deleteSourceBranch !== undefined ? rule.deleteSourceBranch : projectDelete;
+        logger.log(`Matched rule [${rule.sourcePattern} -> ${rule.targetBranch}] for source "${sourceBranch}"`);
+        return {
+          targetBranch: rule.targetBranch,
+          deleteSourceBranch: deleteSource,
+          matchedRule: rule,
+        };
       }
     }
   }
 
-  // 3. Fallback logic
-  // Default requirement: source "development" -> target "main", source any other -> "development"
-  let fallbackTarget = config.global.defaultTargetBranch || 'development';
-  if (sourceBranch?.toLowerCase() === 'development') {
-    fallbackTarget = 'main';
-  } else if (project?.targetBranch) {
-    fallbackTarget = project.targetBranch;
-  }
-
-  // Ensure fallback doesn't target source itself
-  if (sourceBranch && fallbackTarget.toLowerCase() === sourceBranch.toLowerCase()) {
-    fallbackTarget = fallbackTarget.toLowerCase() === 'development' ? 'main' : 'development';
-  }
-
-  logger.log(`Fallback target branch: ${fallbackTarget}`);
+  // 3. If no rule matched the source branch ("ba na mile"), do NOT force a redirect
+  logger.log(`No routing rule matched source branch "${sourceBranch}". Automation will not run.`);
   return {
-    targetBranch: fallbackTarget,
+    targetBranch: null,
     deleteSourceBranch: projectDelete,
   };
 }

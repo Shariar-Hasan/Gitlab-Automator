@@ -13,7 +13,7 @@ const overlay = new LoadingOverlay();
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === 'SEARCH_BRANCHES') {
     const { projectPath, query } = message;
-    
+
     (async () => {
       try {
         const branches: string[] = [];
@@ -116,7 +116,7 @@ async function runAutomation() {
 
   const config = await configStorage.getConfig();
   const projectKey = GitLabAdapter.getProjectKey();
-  
+
   if (projectKey) {
     const isAutoSyncEnabled = config.global.autoSyncVisitedProjects !== false;
     const isBlacklisted = config.global.autoSyncBlacklist?.includes(projectKey);
@@ -132,7 +132,7 @@ async function runAutomation() {
 
   if (!GitLabAdapter.isMergeRequestCreationPage()) {
     // If we left the MR creation page, reset the session storage guard
-    if (!window.location.pathname.includes('/merge_requests')) {
+    if (!window.location.pathname.includes('/merge_requests/new')) {
       sessionStorage.removeItem('gitlab_automator_switched');
     }
     return;
@@ -140,7 +140,13 @@ async function runAutomation() {
 
   logger.log('Detected MR creation page');
 
+  // 1. Strict check: Query params MUST contain source branch. If absent, do not run automation!
   const sourceBranch = GitLabAdapter.getSourceBranch();
+  if (!sourceBranch) {
+    logger.log('No source branch found in query params. Skipping branch automation.');
+    return;
+  }
+
   const currentTargetBranch = GitLabAdapter.getTargetBranch();
 
   logger.log('State:', { projectKey, sourceBranch, currentTargetBranch });
@@ -152,19 +158,29 @@ async function runAutomation() {
   );
 
   logger.log('Branch resolution:', { sourceBranch, currentTargetBranch, resolvedBranch, deleteSourceBranch });
-  
+
+  // 2. Strict check: If no rule matched the source branch ("ba na mile"), do not run automation!
+  if (!resolvedBranch) {
+    logger.log(`No routing rule matched for source branch "${sourceBranch}". Skipping branch automation.`);
+    return;
+  }
+
   if (shouldSwitchBranch(sourceBranch, currentTargetBranch, resolvedBranch)) {
     logger.log(`Switching target branch to ${resolvedBranch} (deleteSource: ${deleteSourceBranch})`);
-    
+
     // Show full-page overlay
-    overlay.show(sourceBranch || 'source', resolvedBranch!);
+    overlay.show(sourceBranch, resolvedBranch, {
+      theme: config.global.theme,
+      accentColor: config.global.accentColor,
+      borderRadius: config.global.borderRadius,
+    });
 
     // Mark as switched in this session to prevent loops
     sessionStorage.setItem('gitlab_automator_switched', 'true');
 
     // Make the switch with target branch and delete source branch in URL
     setTimeout(() => {
-      GitLabAdapter.setTargetBranch(resolvedBranch!, deleteSourceBranch);
+      GitLabAdapter.setTargetBranch(resolvedBranch, sourceBranch, deleteSourceBranch);
       setTimeout(() => overlay.hide(), 2500);
     }, 350);
   } else {

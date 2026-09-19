@@ -21,28 +21,34 @@ export class GitLabAdapter {
   }
 
   static getSourceBranch(): string | null {
-    const url = new URL(window.location.href);
-    const sourceFromUrl = url.searchParams.get('merge_request[source_branch]');
-    if (sourceFromUrl) return sourceFromUrl;
-
-    // Fallback to DOM if needed, but GitLab usually puts it in URL on MR creation
-    const sourceEl = document.querySelector('[data-testid="source-branch-name"]') || 
-                     document.querySelector('.js-source-branch');
-    return sourceEl?.textContent?.trim() || null;
+    try {
+      const url = new URL(window.location.href);
+      // Strictly check URL query parameters for source branch
+      const source = url.searchParams.get('merge_request[source_branch]') || 
+                     url.searchParams.get('source_branch');
+      return source?.trim() || null;
+    } catch {
+      return null;
+    }
   }
 
   static getTargetBranch(): string | null {
-    const url = new URL(window.location.href);
-    const targetFromUrl = url.searchParams.get('merge_request[target_branch]');
-    if (targetFromUrl) return targetFromUrl;
-
-    // Default usually is not in URL initially if it's falling back to project default
-    return null;
+    try {
+      const url = new URL(window.location.href);
+      const target = url.searchParams.get('merge_request[target_branch]') || 
+                     url.searchParams.get('target_branch');
+      return target?.trim() || null;
+    } catch {
+      return null;
+    }
   }
 
-  static setTargetBranch(branch: string, deleteSourceBranch?: boolean): void {
+  static setTargetBranch(targetBranch: string, sourceBranch?: string, deleteSourceBranch?: boolean): void {
     const url = new URL(window.location.href);
-    url.searchParams.set('merge_request[target_branch]', branch);
+    if (sourceBranch) {
+      url.searchParams.set('merge_request[source_branch]', sourceBranch);
+    }
+    url.searchParams.set('merge_request[target_branch]', targetBranch);
     if (deleteSourceBranch !== undefined) {
       url.searchParams.set('merge_request[force_remove_source_branch]', deleteSourceBranch ? 'true' : 'false');
     }

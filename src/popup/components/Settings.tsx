@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { ExtensionConfig, GlobalConfig, GitLabAuthData } from '../../shared/types';
+import { ExtensionConfig, GlobalConfig, GitLabAuthData, DEFAULT_BRANCH_RULES } from '../../shared/types';
 import {
   Settings as SettingsIcon,
   Download,
@@ -20,18 +20,26 @@ import {
   Palette,
   Square,
   Sparkles,
+  RefreshCw,
+  ExternalLink,
 } from 'lucide-react';
 import { authStorage } from '../../shared/storage/authStorage';
 import { THEME_ACCENT_PRESETS } from '../../shared/utils/theme';
+import { UpdateService, UpdateCheckResult } from '../../shared/services/updateService';
+import { useConfirmation } from '../context/ConfirmationContext';
+import { BranchRulesEditor } from './BranchRulesEditor';
 
 interface Props {
   config: ExtensionConfig;
   onImport: (config: ExtensionConfig) => void;
   onReset: () => void;
   onUpdateGlobal: (updates: Partial<GlobalConfig>) => void;
+  updateInfo?: UpdateCheckResult | null;
+  onUpdateFound?: (result: UpdateCheckResult) => void;
 }
 
-export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
+export function Settings({ config, onImport, onReset, onUpdateGlobal, updateInfo, onUpdateFound }: Props) {
+  const { confirm } = useConfirmation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [authData, setAuthData] = useState<GitLabAuthData | null>(null);
   const [patToken, setPatToken] = useState(config.global.personalAccessToken || '');
@@ -39,6 +47,28 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
   const [isSavedToken, setIsSavedToken] = useState(false);
   const [isSavedBranch, setIsSavedBranch] = useState(false);
   const [newBlacklistEntry, setNewBlacklistEntry] = useState('');
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateStatusMessage, setUpdateStatusMessage] = useState<string | null>(null);
+  const [manualCheckResult, setManualCheckResult] = useState<UpdateCheckResult | null>(updateInfo || null);
+
+  const handleManualCheck = async () => {
+    setIsCheckingUpdate(true);
+    setUpdateStatusMessage(null);
+    try {
+      const res = await UpdateService.checkForUpdates(true);
+      setManualCheckResult(res);
+      if (res.hasUpdate) {
+        setUpdateStatusMessage(`New version v${res.latestVersion} is available!`);
+        onUpdateFound?.(res);
+      } else {
+        setUpdateStatusMessage(`You're on the latest version (v${res.currentVersion}).`);
+      }
+    } catch (err) {
+      setUpdateStatusMessage('Failed to check for updates. Please check your connection.');
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
 
   useEffect(() => {
     authStorage.getAuthData().then(setAuthData);
@@ -82,8 +112,15 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
     }
   };
 
-  const handleResetConfirm = () => {
-    if (confirm('Reset all settings?\n\nThis will remove your global configuration and all project overrides.')) {
+  const handleResetConfirm = async () => {
+    const ok = await confirm({
+      title: 'Reset All Extension Settings?',
+      description: 'This will reset your global configuration and permanently remove all custom project overrides.',
+      confirmText: 'Yes, Reset Everything',
+      variant: 'danger',
+      note: 'This action cannot be undone. All custom branch automation rules, tokens, and theme settings will be reverted to factory defaults.',
+    });
+    if (ok) {
       onReset();
     }
   };
@@ -284,60 +321,33 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
       {/* ────────────────────────────────────────────────
           Category 2: Branch Automation Rules
          ──────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-3">
-        <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-semibold text-xs tracking-wide">
-          <Sliders className="w-3.5 h-3.5 text-accent" />
-          <span>Branch Automation</span>
-        </div>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-3.5">
+        <BranchRulesEditor
+          rules={config.global.branchRules || DEFAULT_BRANCH_RULES}
+          onChange={(branchRules) => onUpdateGlobal({ branchRules })}
+          onResetToDefaults={() => onUpdateGlobal({ branchRules: DEFAULT_BRANCH_RULES })}
+          defaultBranch={config.global.defaultTargetBranch || 'development'}
+        />
 
-        {/* Global Default Target Branch */}
-        <div className="space-y-1">
+        {/* Global Fallback & Options */}
+        <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
-              <GitBranch className="w-3 h-3 text-slate-400" />
-              <span>Default Target Branch</span>
+            <div>
+              <p className="text-xs font-medium text-slate-800 dark:text-slate-200">Delete Source Branch by Default</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                Fallback if rule doesn't specify
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={config.global.defaultDeleteSourceBranch}
+                onChange={(e) => onUpdateGlobal({ defaultDeleteSourceBranch: e.target.checked })}
+              />
+              <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent"></div>
             </label>
-            {isSavedBranch && (
-              <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-0.5">
-                <CheckCircle2 className="w-3 h-3" /> Saved
-              </span>
-            )}
           </div>
-          <div className="flex gap-1.5">
-            <input
-              type="text"
-              value={targetBranchInput}
-              onChange={(e) => setTargetBranchInput(e.target.value)}
-              placeholder="e.g. development"
-              className="flex-1 px-2.5 py-1 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg outline-hidden font-mono focus:ring-1 focus:ring-accent"
-            />
-            <button
-              type="button"
-              onClick={handleSaveDefaultBranch}
-              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-accent hover:bg-accent-hover text-white cursor-pointer transition-colors"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-
-        {/* Default Delete Source Branch */}
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-slate-800 dark:text-slate-200">Delete Source Branch by Default</p>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500">
-              Sets <code className="font-mono">force_remove_source_branch=true</code>
-            </p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={config.global.defaultDeleteSourceBranch}
-              onChange={(e) => onUpdateGlobal({ defaultDeleteSourceBranch: e.target.checked })}
-            />
-            <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent"></div>
-          </label>
         </div>
       </div>
 
@@ -493,7 +503,111 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal }: Props) {
       </div>
 
       {/* ────────────────────────────────────────────────
-          Category 5: Backup & Reset
+          Category 5: Updates & Version
+         ──────────────────────────────────────────────── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-semibold text-xs tracking-wide">
+            <RefreshCw className="w-3.5 h-3.5 text-accent" />
+            <span>Updates & Version</span>
+          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            v{UpdateService.getCurrentVersion()}
+          </span>
+        </div>
+
+        {/* Auto vs Manual Mode Switch */}
+        <div className="flex items-center justify-between pt-0.5">
+          <div className="pr-2">
+            <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 block">
+              Update Check Mode
+            </span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+              {config.global.autoCheckUpdates !== false
+                ? 'Automatically checks GitHub for new releases'
+                : 'Manual check only'}
+            </span>
+          </div>
+
+          <div className="flex p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shrink-0">
+            <button
+              type="button"
+              onClick={() => onUpdateGlobal({ autoCheckUpdates: true })}
+              className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all cursor-pointer ${
+                config.global.autoCheckUpdates !== false
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Auto (Default)
+            </button>
+            <button
+              type="button"
+              onClick={() => onUpdateGlobal({ autoCheckUpdates: false })}
+              className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all cursor-pointer ${
+                config.global.autoCheckUpdates === false
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Manual
+            </button>
+          </div>
+        </div>
+
+        {/* Manual Check Button & Status */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={handleManualCheck}
+            disabled={isCheckingUpdate}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-[11px] transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3 h-3 ${isCheckingUpdate ? 'animate-spin text-accent' : ''}`} />
+            <span>{isCheckingUpdate ? 'Checking GitHub...' : 'Check for Updates'}</span>
+          </button>
+
+          <a
+            href="https://github.com/Shariar-Hasan/Gitlab-Automator/releases"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1 text-[11px] text-accent hover:underline cursor-pointer"
+          >
+            <span>Releases Page</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </a>
+        </div>
+
+        {updateStatusMessage && (
+          <div
+            className={`p-2 rounded-lg text-[11px] flex items-center gap-1.5 ${
+              manualCheckResult?.hasUpdate
+                ? 'bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300'
+                : 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300'
+            }`}
+          >
+            {manualCheckResult?.hasUpdate ? (
+              <Sparkles className="w-3.5 h-3.5 shrink-0 text-accent" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            )}
+            <span className="flex-1">{updateStatusMessage}</span>
+            {manualCheckResult?.hasUpdate && (
+              <a
+                href={manualCheckResult.releaseUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-bold underline shrink-0"
+              >
+                View
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ────────────────────────────────────────────────
+          Category 6: Backup & Reset
          ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-xs space-y-2.5">
         <span className="font-semibold text-xs tracking-wide flex items-center gap-1.5 text-slate-800 dark:text-slate-200">

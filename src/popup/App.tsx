@@ -8,7 +8,10 @@ import { ProjectOverrides } from './components/ProjectOverrides';
 import { Settings } from './components/Settings';
 import { CreateMergeRequestModal } from './components/CreateMergeRequestModal';
 import { ProjectSettingsDialog } from './components/ProjectSettingsDialog';
+import { UpdateBanner } from './components/UpdateBanner';
+import { UpdateService, UpdateCheckResult } from '../shared/services/updateService';
 import { getThemeStyles } from '../shared/utils/theme';
+import { ConfirmationProvider } from './context/ConfirmationContext';
 
 export default function App() {
   const [config, setConfig] = useState<ExtensionConfig>(DEFAULT_CONFIG);
@@ -29,6 +32,10 @@ export default function App() {
     deleteSourceBranch: false,
   });
 
+  // Update Check State
+  const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
+  const [isUpdateDismissed, setIsUpdateDismissed] = useState(false);
+
   // Project Settings Dialog state
   const [editingProject, setEditingProject] = useState<ProjectConfig | null>(null);
 
@@ -48,6 +55,17 @@ export default function App() {
       }
 
       setLoading(false);
+
+      // Quietly check for GitHub updates if autoCheckUpdates is enabled (default)
+      if (savedConfig.global.autoCheckUpdates !== false) {
+        UpdateService.checkForUpdates().then((result) => {
+          if (result.hasUpdate) {
+            setUpdateInfo(result);
+          }
+        }).catch(() => {
+          // Quiet ignore
+        });
+      }
     };
     loadData();
   }, []);
@@ -83,22 +101,46 @@ export default function App() {
   };
 
   const handleAddProject = async (project: ProjectConfig) => {
-    await configStorage.setProjectConfig(project.projectKey, project);
+    const projectWithTime = {
+      ...project,
+      updatedAt: project.updatedAt || Date.now(),
+    };
+    await configStorage.setProjectConfig(project.projectKey, projectWithTime);
     setConfig((prev) => ({
       ...prev,
-      projects: { ...prev.projects, [project.projectKey]: project },
+      projects: { ...prev.projects, [project.projectKey]: projectWithTime },
     }));
   };
 
   const handleUpdateProject = async (projectKey: string, updates: Partial<ProjectConfig>) => {
     const current = config.projects[projectKey];
     if (current) {
-      const updated = { ...current, ...updates };
+      const updated = { ...current, ...updates, updatedAt: updates.updatedAt || Date.now() };
       await configStorage.setProjectConfig(projectKey, updated);
       setConfig((prev) => ({
         ...prev,
         projects: { ...prev.projects, [projectKey]: updated },
       }));
+    }
+  };
+
+  const handleMRCreated = async (projectKey: string) => {
+    const timestamp = Date.now();
+    const current = config.projects[projectKey];
+    if (current) {
+      await handleUpdateProject(projectKey, {
+        last_mr_created_at: timestamp,
+        updatedAt: timestamp,
+      });
+    } else {
+      await handleAddProject({
+        projectKey,
+        targetBranch: config.global.defaultTargetBranch,
+        enabled: true,
+        last_mr_created_at: timestamp,
+        updatedAt: timestamp,
+        lastVisited: timestamp,
+      });
     }
   };
 
@@ -157,7 +199,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[300px] w-[380px] text-xs text-slate-500">
+      <div className="flex items-center justify-center min-h-[300px] w-full text-xs text-slate-500">
         Loading...
       </div>
     );
@@ -167,75 +209,91 @@ export default function App() {
   const themeStyles = getThemeStyles(config.global.accentColor || '#2563eb');
 
   return (
-    <div
-      className={isDarkMode ? 'dark' : ''}
-      style={themeStyles}
-      data-radius={config.global.borderRadius || 'md'}
-    >
-      <div className="w-[385px] min-h-[500px] max-h-[600px] bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-x-hidden antialiased">
-        {/* Header with Global ON/OFF Switch */}
-        <Header enabled={config.global.enabled} onToggle={handleGlobalToggle} />
-
-        {/* Tab Switcher */}
-        <div className="px-3.5 pt-3">
-          <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
-        </div>
-
-        {/* Main Content Body */}
-        <div className="p-3.5 flex-1 overflow-y-auto space-y-3.5">
-          {activeTab === 'home' ? (
-            <>
-              {currentTabUrl && (
-                <CurrentProjectCard
-                  url={currentTabUrl}
-                  projects={config.projects}
-                  globalConfig={config.global}
-                  onAdd={handleAddProject}
-                  disabled={!config.global.enabled}
-                  onAddToException={handleAddToException}
-                />
-              )}
-
-              <ProjectOverrides
-                projects={config.projects}
-                onUpdate={handleUpdateProject}
-                onDelete={handleDeleteProject}
-                onAdd={handleAddProject}
-                disabled={!config.global.enabled}
-                onCreateMR={handleOpenMRModal}
-                onOpenProjectSettings={(proj) => setEditingProject(proj)}
-              />
-            </>
-          ) : (
-            <Settings
-              config={config}
-              onImport={(newConfig) => {
-                configStorage.importConfig(newConfig).then(() => setConfig(newConfig));
-              }}
-              onReset={handleReset}
-              onUpdateGlobal={handleUpdateGlobal}
+    <ConfirmationProvider>
+      <div
+        className={isDarkMode ? 'dark' : ''}
+        style={themeStyles}
+        data-radius={config.global.borderRadius || 'md'}
+      >
+        <div className="w-full min-h-[500px] max-h-[600px] bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-x-hidden antialiased">
+          {/* Top Update Alert Banner */}
+          {updateInfo?.hasUpdate && !isUpdateDismissed && (
+            <UpdateBanner
+              updateInfo={updateInfo}
+              onDismiss={() => setIsUpdateDismissed(true)}
             />
           )}
+
+          {/* Header with Global ON/OFF Switch */}
+          <Header enabled={config.global.enabled} onToggle={handleGlobalToggle} />
+
+          {/* Tab Switcher */}
+          <div className="px-3.5 pt-3">
+            <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
+          </div>
+
+          {/* Main Content Body */}
+          <div className="p-3.5 flex-1 overflow-y-auto space-y-3.5">
+            {activeTab === 'home' ? (
+              <>
+                {currentTabUrl && (
+                  <CurrentProjectCard
+                    url={currentTabUrl}
+                    projects={config.projects}
+                    globalConfig={config.global}
+                    onAdd={handleAddProject}
+                    disabled={!config.global.enabled}
+                    onAddToException={handleAddToException}
+                  />
+                )}
+
+                <ProjectOverrides
+                  projects={config.projects}
+                  onUpdate={handleUpdateProject}
+                  onDelete={handleDeleteProject}
+                  onAdd={handleAddProject}
+                  disabled={!config.global.enabled}
+                  onCreateMR={handleOpenMRModal}
+                  onOpenProjectSettings={(proj) => setEditingProject(proj)}
+                />
+              </>
+            ) : (
+              <Settings
+                config={config}
+                onImport={(newConfig) => {
+                  configStorage.importConfig(newConfig).then(() => setConfig(newConfig));
+                }}
+                onReset={handleReset}
+                onUpdateGlobal={handleUpdateGlobal}
+                updateInfo={updateInfo}
+                onUpdateFound={(result) => {
+                  setUpdateInfo(result);
+                  setIsUpdateDismissed(false);
+                }}
+              />
+            )}
+          </div>
+
+          {/* Project Customization Dialog */}
+          <ProjectSettingsDialog
+            isOpen={!!editingProject}
+            project={editingProject}
+            globalDefaultBranch={config.global.defaultTargetBranch}
+            onSave={handleUpdateProject}
+            onClose={() => setEditingProject(null)}
+          />
+
+          {/* Create Merge Request Modal */}
+          <CreateMergeRequestModal
+            isOpen={mrModal.isOpen}
+            projectKey={mrModal.projectKey}
+            defaultTargetBranch={mrModal.targetBranch}
+            defaultDeleteSourceBranch={mrModal.deleteSourceBranch}
+            onClose={handleCloseMRModal}
+            onSubmitMR={handleMRCreated}
+          />
         </div>
-
-        {/* Project Customization Dialog */}
-        <ProjectSettingsDialog
-          isOpen={!!editingProject}
-          project={editingProject}
-          globalDefaultBranch={config.global.defaultTargetBranch}
-          onSave={handleUpdateProject}
-          onClose={() => setEditingProject(null)}
-        />
-
-        {/* Create Merge Request Modal */}
-        <CreateMergeRequestModal
-          isOpen={mrModal.isOpen}
-          projectKey={mrModal.projectKey}
-          defaultTargetBranch={mrModal.targetBranch}
-          defaultDeleteSourceBranch={mrModal.deleteSourceBranch}
-          onClose={handleCloseMRModal}
-        />
       </div>
-    </div>
+    </ConfirmationProvider>
   );
 }

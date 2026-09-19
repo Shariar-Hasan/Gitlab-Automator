@@ -44,22 +44,49 @@ export const configStorage = {
 
   async setProjectConfig(projectKey: string, projectConfig: ProjectConfig): Promise<void> {
     const config = await this.getConfig();
-    config.projects[projectKey] = projectConfig;
+    config.projects[projectKey] = {
+      ...projectConfig,
+      updatedAt: projectConfig.updatedAt || Date.now(),
+    };
     await this.saveConfig(config);
   },
 
-  async addVisitedProject(projectKey: string): Promise<void> {
+  async recordMrCreated(projectKey: string): Promise<void> {
     const config = await this.getConfig();
     const existing = config.projects[projectKey];
-    
+    const timestamp = Date.now();
     if (existing) {
-      existing.lastVisited = Date.now();
+      existing.last_mr_created_at = timestamp;
+      existing.updatedAt = timestamp;
+      await this.saveConfig(config);
     } else {
       config.projects[projectKey] = {
         projectKey,
         targetBranch: config.global.defaultTargetBranch,
         enabled: true,
-        lastVisited: Date.now()
+        last_mr_created_at: timestamp,
+        updatedAt: timestamp,
+        lastVisited: timestamp,
+      };
+      await this.saveConfig(config);
+    }
+  },
+
+  async addVisitedProject(projectKey: string): Promise<void> {
+    const config = await this.getConfig();
+    const existing = config.projects[projectKey];
+    const now = Date.now();
+    
+    if (existing) {
+      existing.lastVisited = now;
+      existing.updatedAt = now;
+    } else {
+      config.projects[projectKey] = {
+        projectKey,
+        targetBranch: config.global.defaultTargetBranch,
+        enabled: true,
+        lastVisited: now,
+        updatedAt: now,
       };
     }
     await this.saveConfig(config);

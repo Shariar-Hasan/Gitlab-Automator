@@ -45,8 +45,10 @@
     background: rgba(100, 116, 139, 0.7);
   }
 
-  html, body, #root {
-    width: 385px;
+  html,
+  body,
+  #root {
+    width: 430px;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
@@ -85,7 +87,7 @@
   border-color: var(--accent-color) !important;
 }
 
-.peer:checked ~ .peer-checked\:bg-accent {
+.peer:checked~.peer-checked\:bg-accent {
   background-color: var(--accent-color) !important;
 }
 
@@ -120,4 +122,3 @@
 [data-radius="sm"] select {
   border-radius: 4px !important;
 }
-

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GitPullRequest, GitBranch, Search, X, Loader2, ExternalLink, ArrowRight, Check, FileText } from 'lucide-react';
 import { BranchService } from '../../shared/services/branchService';
+import { configStorage } from '../../shared/storage/configStorage';
 
 interface Props {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface Props {
   defaultTargetBranch: string;
   defaultDeleteSourceBranch?: boolean;
   onClose: () => void;
+  onSubmitMR?: (projectKey: string) => Promise<void> | void;
 }
 
 export function CreateMergeRequestModal({
@@ -16,6 +18,7 @@ export function CreateMergeRequestModal({
   defaultTargetBranch,
   defaultDeleteSourceBranch = false,
   onClose,
+  onSubmitMR,
 }: Props) {
   // Source branch state
   const [sourceBranch, setSourceBranch] = useState('');
@@ -134,10 +137,22 @@ export function CreateMergeRequestModal({
     targetSearchQuery ? b.toLowerCase().includes(targetSearchQuery.toLowerCase()) : true
   );
 
-  const handleNavigateToGitLab = (e?: React.FormEvent) => {
+  const handleNavigateToGitLab = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!effectiveSource) return;
 
+    // 1. First save the timestamp
+    try {
+      if (onSubmitMR) {
+        await onSubmitMR(projectKey);
+      } else {
+        await configStorage.recordMrCreated(projectKey);
+      }
+    } catch (err) {
+      console.error('Failed to save MR timestamp:', err);
+    }
+
+    // 2. Then take to the merge request page
     const queryParams = new URLSearchParams();
     queryParams.set('merge_request[source_branch]', effectiveSource);
     queryParams.set('merge_request[target_branch]', effectiveTarget);
@@ -161,11 +176,11 @@ export function CreateMergeRequestModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[96vh] text-slate-900 dark:text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[570px] text-slate-900 dark:text-slate-100">
         {/* Header */}
         <div
-          className="px-4 py-3 flex items-center justify-between text-white shadow-xs"
+          className="px-3.5 py-2.5 flex items-center justify-between text-white shadow-xs shrink-0"
           style={{
             background: 'linear-gradient(to right, var(--accent-color, #2563eb), var(--accent-hover, #1d4ed8))',
           }}
@@ -184,9 +199,11 @@ export function CreateMergeRequestModal({
           </button>
         </div>
 
-        {/* Body Form */}
-        <form onSubmit={handleNavigateToGitLab} className="p-4 space-y-3.5 text-xs overflow-y-auto">
-          {/* Visual Flow Banner */}
+        {/* Form Container */}
+        <form onSubmit={handleNavigateToGitLab} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Body Form */}
+          <div className="p-3.5 space-y-3.5 text-xs overflow-y-auto flex-1 min-h-0">
+            {/* Visual Flow Banner */}
           <div className="p-2.5 bg-blue-50/70 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 rounded-lg space-y-1.5">
             <div className="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400">
               <span className="font-semibold uppercase tracking-wider">Repository</span>
@@ -393,28 +410,29 @@ export function CreateMergeRequestModal({
               <span className="text-[11px] font-medium">Delete source branch when merge request is accepted</span>
             </label>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="pt-2.5 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-xs cursor-pointer"
-            >
-              Cancel
-            </button>
+        {/* Pinned Sticky Footer */}
+        <div className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-xs cursor-pointer transition-colors"
+          >
+            Cancel
+          </button>
 
-            <button
-              type="submit"
-              disabled={!effectiveSource || !effectiveTarget}
-              className="px-4 py-1.5 rounded-lg bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Create Merge Request</span>
-            </button>
-          </div>
-        </form>
-      </div>
+          <button
+            type="submit"
+            disabled={!effectiveSource || !effectiveTarget}
+            className="px-4 py-1.5 rounded-lg bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Create Merge Request</span>
+          </button>
+        </div>
+      </form>
     </div>
-  );
+  </div>
+);
 }

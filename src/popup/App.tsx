@@ -199,7 +199,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[300px] w-[380px] text-xs text-slate-500">
+      <div className="flex items-center justify-center min-h-[300px] w-full text-xs text-slate-500">
         Loading...
       </div>
     );
@@ -215,7 +215,7 @@ export default function App() {
         style={themeStyles}
         data-radius={config.global.borderRadius || 'md'}
       >
-        <div className="w-[430px] min-h-[500px] max-h-[600px] bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-x-hidden antialiased">
+        <div className="w-full min-h-[500px] max-h-[600px] bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-x-hidden antialiased">
           {/* Top Update Alert Banner */}
           {updateInfo?.hasUpdate && !isUpdateDismissed && (
             <UpdateBanner

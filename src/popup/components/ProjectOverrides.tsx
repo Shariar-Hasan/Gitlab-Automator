@@ -3,6 +3,7 @@ import { ProjectConfig } from '../../shared/types';
 import { Layers, Plus, GitPullRequest, Sliders, MoreHorizontal, Power, Trash2, FolderGit2, ArrowUpDown } from 'lucide-react';
 import { ProjectOverrideDialog } from './ProjectOverrideDialog';
 import { COLOR_OPTIONS } from './ProjectSettingsDialog';
+import { useConfirmation } from '../context/ConfirmationContext';
 
 export type SortOption = 'mr_created' | 'name_asc' | 'name_desc' | 'update_desc' | 'update_asc';
 
@@ -26,7 +27,7 @@ interface Props {
   onDelete: (key: string) => void;
   onAdd: (project: ProjectConfig) => void;
   disabled: boolean;
-  onCreateMR: (projectKey: string, targetBranch: string) => void;
+  onCreateMR: (projectKey: string, defaultTargetBranch: string, defaultDeleteSourceBranch?: boolean) => void;
   onOpenProjectSettings: (project: ProjectConfig) => void;
 }
 
@@ -39,6 +40,7 @@ export function ProjectOverrides({
   onCreateMR,
   onOpenProjectSettings,
 }: Props) {
+  const { confirm } = useConfirmation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; projectKey: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -317,9 +319,19 @@ export function ProjectOverrides({
 
           <button
             type="button"
-            onClick={() => {
-              onDelete(activeProject.projectKey);
+            onClick={async () => {
+              const keyToDelete = activeProject.projectKey;
               setMenuAnchor(null);
+              const ok = await confirm({
+                title: 'Delete Project Override?',
+                description: `Are you sure you want to remove custom settings for "${keyToDelete}"?`,
+                confirmText: 'Delete Project',
+                variant: 'danger',
+                note: 'Custom branch routing, colors, and settings for this project will be deleted. It will revert to global settings.',
+              });
+              if (ok) {
+                onDelete(keyToDelete);
+              }
             }}
             className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 cursor-pointer"
           >

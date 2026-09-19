@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ProjectConfig, GlobalConfig } from '../../shared/types';
 import { FolderGit2, ChevronDown, ShieldBan, CheckCircle2 } from 'lucide-react';
 import { COLOR_OPTIONS } from './ProjectSettingsDialog';
+import { useConfirmation } from '../context/ConfirmationContext';
 
 interface Props {
   url: string;
@@ -20,6 +21,7 @@ export function CurrentProjectCard({
   disabled,
   onAddToException,
 }: Props) {
+  const { confirm } = useConfirmation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   let projectKey = '';
@@ -58,11 +60,15 @@ export function CurrentProjectCard({
     ? COLOR_OPTIONS.find((c) => c.id === projectConfig.colorTag)
     : null;
 
-  const handleExceptionClick = () => {
-    const confirmed = confirm(
-      `Are you sure you want to add "${projectKey}" to the exception list?\n\nIf added, this project will never be automatically added or synced by the extension. You will have to manage it manually.`
-    );
-    if (confirmed) {
+  const handleExceptionClick = async () => {
+    const ok = await confirm({
+      title: 'Add Project to Exception List?',
+      description: `Do you want to add "${projectKey}" to the exception list?`,
+      confirmText: 'Add to Exceptions',
+      variant: 'warning',
+      note: 'If added, this project will never be automatically added or synced by the extension. You will have to manage it manually.',
+    });
+    if (ok) {
       onAddToException(projectKey);
     }
   };

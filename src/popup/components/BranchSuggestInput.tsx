@@ -60,10 +60,10 @@ export function BranchSuggestInput({
   const filterQuery = (value || '').trim().toLowerCase();
   const filteredOptions = filterQuery
     ? combinedOptions.filter(
-        (opt) =>
-          opt.value.toLowerCase().includes(filterQuery) ||
-          (opt.label && opt.label.toLowerCase().includes(filterQuery))
-      )
+      (opt) =>
+        opt.value.toLowerCase().includes(filterQuery) ||
+        (opt.label && opt.label.toLowerCase().includes(filterQuery))
+    )
     : combinedOptions;
 
   const handleSelect = (val: string) => {
@@ -111,7 +111,7 @@ export function BranchSuggestInput({
 
       {/* Floating Suggestions Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-850 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 overflow-hidden max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute left-0 right-0 top-full mt-1 max-w-[130%] w-max bg-white dark:bg-slate-850 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 overflow-hidden max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 animate-in fade-in zoom-in-95 duration-100">
           {filteredOptions.length === 0 ? (
             <div className="p-2 text-center text-[10px] text-slate-400">
               No exact match. Custom pattern will be used: <br />
@@ -125,9 +125,9 @@ export function BranchSuggestInput({
                   key={opt.value}
                   type="button"
                   onClick={() => handleSelect(opt.value)}
-                  className={`w-full px-2.5 py-1.5 text-left flex items-center justify-between gap-1.5 hover:bg-accent/10 transition-colors cursor-pointer text-[11px] font-mono ${
-                    isSelected ? 'bg-accent/10 text-accent font-semibold' : 'text-slate-700 dark:text-slate-200'
-                  }`}
+                  className={`w-full px-2.5 py-1.5 text-left flex items-center justify-between gap-1.5 hover:bg-accent/10 transition-colors cursor-pointer text-[9px] font-mono ${isSelected ? 'bg-accent/10 text-accent font-semibold' : 'text-slate-700 dark:text-slate-200'
+                    }`}
+                  title={opt.label || opt.value}
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
                     {opt.isPattern ? (

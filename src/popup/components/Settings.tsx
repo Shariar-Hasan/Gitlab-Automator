@@ -26,6 +26,7 @@ import {
 import { authStorage } from '../../shared/storage/authStorage';
 import { THEME_ACCENT_PRESETS } from '../../shared/utils/theme';
 import { UpdateService, UpdateCheckResult } from '../../shared/services/updateService';
+import { useConfirmation } from '../context/ConfirmationContext';
 import { BranchRulesEditor } from './BranchRulesEditor';
 
 interface Props {
@@ -38,6 +39,7 @@ interface Props {
 }
 
 export function Settings({ config, onImport, onReset, onUpdateGlobal, updateInfo, onUpdateFound }: Props) {
+  const { confirm } = useConfirmation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [authData, setAuthData] = useState<GitLabAuthData | null>(null);
   const [patToken, setPatToken] = useState(config.global.personalAccessToken || '');
@@ -110,8 +112,15 @@ export function Settings({ config, onImport, onReset, onUpdateGlobal, updateInfo
     }
   };
 
-  const handleResetConfirm = () => {
-    if (confirm('Reset all settings?\n\nThis will remove your global configuration and all project overrides.')) {
+  const handleResetConfirm = async () => {
+    const ok = await confirm({
+      title: 'Reset All Extension Settings?',
+      description: 'This will reset your global configuration and permanently remove all custom project overrides.',
+      confirmText: 'Yes, Reset Everything',
+      variant: 'danger',
+      note: 'This action cannot be undone. All custom branch automation rules, tokens, and theme settings will be reverted to factory defaults.',
+    });
+    if (ok) {
       onReset();
     }
   };

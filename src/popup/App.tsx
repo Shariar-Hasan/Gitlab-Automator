@@ -83,22 +83,46 @@ export default function App() {
   };
 
   const handleAddProject = async (project: ProjectConfig) => {
-    await configStorage.setProjectConfig(project.projectKey, project);
+    const projectWithTime = {
+      ...project,
+      updatedAt: project.updatedAt || Date.now(),
+    };
+    await configStorage.setProjectConfig(project.projectKey, projectWithTime);
     setConfig((prev) => ({
       ...prev,
-      projects: { ...prev.projects, [project.projectKey]: project },
+      projects: { ...prev.projects, [project.projectKey]: projectWithTime },
     }));
   };
 
   const handleUpdateProject = async (projectKey: string, updates: Partial<ProjectConfig>) => {
     const current = config.projects[projectKey];
     if (current) {
-      const updated = { ...current, ...updates };
+      const updated = { ...current, ...updates, updatedAt: updates.updatedAt || Date.now() };
       await configStorage.setProjectConfig(projectKey, updated);
       setConfig((prev) => ({
         ...prev,
         projects: { ...prev.projects, [projectKey]: updated },
       }));
+    }
+  };
+
+  const handleMRCreated = async (projectKey: string) => {
+    const timestamp = Date.now();
+    const current = config.projects[projectKey];
+    if (current) {
+      await handleUpdateProject(projectKey, {
+        last_mr_created_at: timestamp,
+        updatedAt: timestamp,
+      });
+    } else {
+      await handleAddProject({
+        projectKey,
+        targetBranch: config.global.defaultTargetBranch,
+        enabled: true,
+        last_mr_created_at: timestamp,
+        updatedAt: timestamp,
+        lastVisited: timestamp,
+      });
     }
   };
 
@@ -234,6 +258,7 @@ export default function App() {
           defaultTargetBranch={mrModal.targetBranch}
           defaultDeleteSourceBranch={mrModal.deleteSourceBranch}
           onClose={handleCloseMRModal}
+          onSubmitMR={handleMRCreated}
         />
       </div>
     </div>

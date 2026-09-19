@@ -29,6 +29,8 @@ export interface ProjectConfig {
   enabled: boolean;
   deleteSourceBranch?: boolean;
   lastVisited?: number;
+  last_mr_created_at?: number;
+  updatedAt?: number;
 }
 
 export interface ExtensionConfig {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GitPullRequest, GitBranch, Search, X, Loader2, ExternalLink, ArrowRight, Check, FileText } from 'lucide-react';
 import { BranchService } from '../../shared/services/branchService';
+import { configStorage } from '../../shared/storage/configStorage';
 
 interface Props {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface Props {
   defaultTargetBranch: string;
   defaultDeleteSourceBranch?: boolean;
   onClose: () => void;
+  onSubmitMR?: (projectKey: string) => Promise<void> | void;
 }
 
 export function CreateMergeRequestModal({
@@ -16,6 +18,7 @@ export function CreateMergeRequestModal({
   defaultTargetBranch,
   defaultDeleteSourceBranch = false,
   onClose,
+  onSubmitMR,
 }: Props) {
   // Source branch state
   const [sourceBranch, setSourceBranch] = useState('');
@@ -134,10 +137,22 @@ export function CreateMergeRequestModal({
     targetSearchQuery ? b.toLowerCase().includes(targetSearchQuery.toLowerCase()) : true
   );
 
-  const handleNavigateToGitLab = (e?: React.FormEvent) => {
+  const handleNavigateToGitLab = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!effectiveSource) return;
 
+    // 1. First save the timestamp
+    try {
+      if (onSubmitMR) {
+        await onSubmitMR(projectKey);
+      } else {
+        await configStorage.recordMrCreated(projectKey);
+      }
+    } catch (err) {
+      console.error('Failed to save MR timestamp:', err);
+    }
+
+    // 2. Then take to the merge request page
     const queryParams = new URLSearchParams();
     queryParams.set('merge_request[source_branch]', effectiveSource);
     queryParams.set('merge_request[target_branch]', effectiveTarget);

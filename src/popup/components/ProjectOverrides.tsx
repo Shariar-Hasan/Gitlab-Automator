@@ -1,8 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ProjectConfig } from '../../shared/types';
-import { Layers, Plus, GitPullRequest, Sliders, MoreHorizontal, Power, Trash2, FolderGit2 } from 'lucide-react';
+import { Layers, Plus, GitPullRequest, Sliders, MoreHorizontal, Power, Trash2, FolderGit2, ArrowUpDown } from 'lucide-react';
 import { ProjectOverrideDialog } from './ProjectOverrideDialog';
 import { COLOR_OPTIONS } from './ProjectSettingsDialog';
+
+export type SortOption = 'mr_created' | 'name_asc' | 'name_desc' | 'update_desc' | 'update_asc';
+
+const SORT_STORAGE_KEY = 'gitlab_automator_project_sort';
+
+function formatTimeAgo(timestamp: number): string {
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 60) return 'just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays}d ago`;
+  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 interface Props {
   projects: Record<string, ProjectConfig>;
@@ -27,8 +43,71 @@ export function ProjectOverrides({
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; projectKey: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const [sortBy, setSortBy] = useState<SortOption>(() => {
+    try {
+      const saved = localStorage.getItem(SORT_STORAGE_KEY);
+      if (saved && ['mr_created', 'name_asc', 'name_desc', 'update_desc', 'update_asc'].includes(saved)) {
+        return saved as SortOption;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return 'mr_created';
+  });
+
+  const handleSortChange = (newSort: SortOption) => {
+    setSortBy(newSort);
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, newSort);
+    } catch (e) {
+      // ignore
+    }
+  };
+
   const projectList = Object.values(projects).sort((a, b) => {
-    return (b.lastVisited || 0) - (a.lastVisited || 0);
+    if (sortBy === 'name_asc') {
+      const nameA = (a.customName || a.projectKey.split('/').slice(1).join('/') || a.projectKey).toLowerCase();
+      const nameB = (b.customName || b.projectKey.split('/').slice(1).join('/') || b.projectKey).toLowerCase();
+      return nameA.localeCompare(nameB);
+    }
+
+    if (sortBy === 'name_desc') {
+      const nameA = (a.customName || a.projectKey.split('/').slice(1).join('/') || a.projectKey).toLowerCase();
+      const nameB = (b.customName || b.projectKey.split('/').slice(1).join('/') || b.projectKey).toLowerCase();
+      return nameB.localeCompare(nameA);
+    }
+
+    if (sortBy === 'update_desc') {
+      const timeA = a.updatedAt || a.lastVisited || a.last_mr_created_at || 0;
+      const timeB = b.updatedAt || b.lastVisited || b.last_mr_created_at || 0;
+      if (timeA !== timeB) return timeB - timeA;
+      const nameA = (a.customName || a.projectKey).toLowerCase();
+      const nameB = (b.customName || b.projectKey).toLowerCase();
+      return nameA.localeCompare(nameB);
+    }
+
+    if (sortBy === 'update_asc') {
+      const timeA = a.updatedAt || a.lastVisited || a.last_mr_created_at || 0;
+      const timeB = b.updatedAt || b.lastVisited || b.last_mr_created_at || 0;
+      if (timeA !== timeB) return timeA - timeB;
+      const nameA = (a.customName || a.projectKey).toLowerCase();
+      const nameB = (b.customName || b.projectKey).toLowerCase();
+      return nameA.localeCompare(nameB);
+    }
+
+    // Default: 'mr_created' (Most recently created MR first)
+    const mrA = a.last_mr_created_at || 0;
+    const mrB = b.last_mr_created_at || 0;
+    if (mrA !== mrB) return mrB - mrA;
+
+    // Secondary sort: most recently updated / visited
+    const timeA = a.updatedAt || a.lastVisited || 0;
+    const timeB = b.updatedAt || b.lastVisited || 0;
+    if (timeA !== timeB) return timeB - timeA;
+
+    const nameA = (a.customName || a.projectKey).toLowerCase();
+    const nameB = (b.customName || b.projectKey).toLowerCase();
+    return nameA.localeCompare(nameB);
   });
 
   // Handle click outside of floating popover menu
@@ -70,6 +149,26 @@ export function ProjectOverrides({
         </button>
       </div>
 
+      {/* Sub-bar: Sorting Controls */}
+      <div className="px-3 py-1.5 bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+          <ArrowUpDown className="w-3 h-3 text-slate-400 shrink-0" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider">Sort:</span>
+        </div>
+        <select
+          value={sortBy}
+          onChange={(e) => handleSortChange(e.target.value as SortOption)}
+          aria-label="Sort projects"
+          className="text-[11px] py-0.5 px-2 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium focus:ring-1 focus:ring-accent outline-hidden cursor-pointer shadow-2xs"
+        >
+          <option value="mr_created">MR Created (Recent)</option>
+          <option value="name_asc">Name (A → Z)</option>
+          <option value="name_desc">Name (Z → A)</option>
+          <option value="update_desc">Last Update (First)</option>
+          <option value="update_asc">Last Update (Last)</option>
+        </select>
+      </div>
+
       {/* Project list */}
       <div className="divide-y divide-slate-100 dark:divide-slate-800/80 max-h-[340px] overflow-y-auto overflow-x-hidden">
         {projectList.length === 0 ? (
@@ -109,9 +208,30 @@ export function ProjectOverrides({
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate">
-                      {project.projectKey}
-                    </p>
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 min-w-0">
+                      <span className="font-mono truncate">{project.projectKey}</span>
+                      {project.last_mr_created_at ? (
+                        <>
+                          <span className="text-slate-300 dark:text-slate-700 shrink-0">•</span>
+                          <span
+                            className="text-[10px] text-accent font-medium shrink-0"
+                            title={`Last MR Created: ${new Date(project.last_mr_created_at).toLocaleString()}`}
+                          >
+                            MR: {formatTimeAgo(project.last_mr_created_at)}
+                          </span>
+                        </>
+                      ) : (project.updatedAt || project.lastVisited) ? (
+                        <>
+                          <span className="text-slate-300 dark:text-slate-700 shrink-0">•</span>
+                          <span
+                            className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0"
+                            title={`Last Updated: ${new Date(project.updatedAt || project.lastVisited!).toLocaleString()}`}
+                          >
+                            {formatTimeAgo(project.updatedAt || project.lastVisited!)}
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
 

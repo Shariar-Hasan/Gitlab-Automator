@@ -1,12 +1,14 @@
-import { defineConfig } from 'vite';
+import { defineConfig, build } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import { readdirSync, readFileSync } from 'fs';
 
-// Custom plugin to copy manifest and icons
-function copyManifestPlugin() {
+let isBuildingContent = false;
+
+// Custom plugin to copy manifest, icons, and build standalone content script
+function chromeExtensionPlugin() {
   return {
-    name: 'copy-manifest',
+    name: 'chrome-extension-plugin',
     generateBundle() {
       const manifest = readFileSync(resolve(__dirname, 'manifest.json'));
       this.emitFile({
@@ -31,18 +33,39 @@ function copyManifestPlugin() {
         // Ignore if logo dir doesn't exist
       }
     },
+    async closeBundle() {
+      if (isBuildingContent) return;
+      isBuildingContent = true;
+
+      // Build content script as standalone IIFE to prevent "import statement outside a module" error in Chrome
+      await build({
+        configFile: false,
+        plugins: [],
+        build: {
+          outDir: 'dist',
+          emptyOutDir: false,
+          lib: {
+            entry: resolve(__dirname, 'src/content/index.ts'),
+            name: 'GitLabAutomatorContent',
+            formats: ['iife'],
+            fileName: () => 'content.js',
+          },
+        },
+      });
+
+      isBuildingContent = false;
+    },
   };
 }
 
 export default defineConfig({
   base: './',
-  plugins: [react(), copyManifestPlugin()],
+  plugins: [react(), chromeExtensionPlugin()],
   build: {
     outDir: 'dist',
     rollupOptions: {
       input: {
         popup: resolve(__dirname, 'popup.html'),
-        content: resolve(__dirname, 'src/content/index.ts'),
       },
       output: {
         entryFileNames: '[name].js',

@@ -1,3 +1,23 @@
+export interface BranchRule {
+  id: string;
+  sourcePattern: string; // e.g. "development", "*", "feat/*", "release/*"
+  targetBranch: string;  // e.g. "main", "development", "staging"
+  deleteSourceBranch?: boolean; // undefined = inherit, true = always delete, false = keep
+}
+
+export const DEFAULT_BRANCH_RULES: BranchRule[] = [
+  {
+    id: 'default-rule-dev-to-main',
+    sourcePattern: 'development',
+    targetBranch: 'main',
+  },
+  {
+    id: 'default-rule-any-to-dev',
+    sourcePattern: '*',
+    targetBranch: 'development',
+  },
+];
+
 export interface GlobalConfig {
   enabled: boolean;
   defaultTargetBranch: string;
@@ -11,6 +31,7 @@ export interface GlobalConfig {
   defaultDeleteSourceBranch: boolean;
   autoCheckUpdates?: boolean;
   lastUpdateCheckTime?: number;
+  branchRules?: BranchRule[];
 }
 
 export interface GitLabAuthData {
@@ -33,6 +54,8 @@ export interface ProjectConfig {
   lastVisited?: number;
   last_mr_created_at?: number;
   updatedAt?: number;
+  branchRules?: BranchRule[];
+  useCustomBranchRules?: boolean;
 }
 
 export interface ExtensionConfig {
@@ -54,6 +77,7 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
     autoSyncBlacklist: [],
     defaultDeleteSourceBranch: false,
     autoCheckUpdates: true,
+    branchRules: DEFAULT_BRANCH_RULES,
   },
   projects: {},
 };

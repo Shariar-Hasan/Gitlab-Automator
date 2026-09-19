@@ -40,9 +40,12 @@ export class GitLabAdapter {
     return null;
   }
 
-  static setTargetBranch(branch: string): void {
+  static setTargetBranch(branch: string, deleteSourceBranch?: boolean): void {
     const url = new URL(window.location.href);
     url.searchParams.set('merge_request[target_branch]', branch);
+    if (deleteSourceBranch !== undefined) {
+      url.searchParams.set('merge_request[force_remove_source_branch]', deleteSourceBranch ? 'true' : 'false');
+    }
     
     // We navigate to the new URL to force GitLab to load the MR with this target
     window.location.replace(url.toString());
